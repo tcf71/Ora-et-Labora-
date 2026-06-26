@@ -79,7 +79,9 @@ html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe
 .pill.red{color:var(--red-text);border-color:var(--red-border);background:var(--red-bg);}
 .pill.red:hover{filter:brightness(0.93);transform:scale(1.02);}
 .pill.green{color:var(--done-text);border-color:var(--done-border);background:var(--done-bg);cursor:pointer;}
-.pill.orange{color:var(--orange-text);border-color:var(--orange-border);background:var(--orange-bg);cursor:default;pointer-events:none;}
+.pill.green:hover{filter:brightness(0.9);opacity:0.85;}
+.pill.orange{color:var(--orange-text);border-color:var(--orange-border);background:var(--orange-bg);cursor:pointer;}
+.pill.orange:hover{filter:brightness(0.9);opacity:0.85;}
 .pill.flipping{animation:flip 0.22s ease;}
 @keyframes flip{0%{transform:scale(1)}40%{transform:scale(0.88)}100%{transform:scale(1)}}
 .section.done-section{background:rgba(30,122,66,0.06);}
@@ -146,6 +148,47 @@ html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe
 .badges{display:flex;flex-wrap:wrap;gap:6px;}
 .badge{padding:4px 10px;border-radius:999px;font-size:10px;font-weight:600;border:1px solid var(--border);color:var(--muted);}
 .badge.earned{border-color:var(--accent);color:var(--accent);}
+
+
+/* ── ANNULER ── */
+function cancelLecture(key){
+  const ds=G.days[key];if(!ds.lectures)return;
+  ds.lectures=false;
+  addScore(-PTS.lecture,'← Lecture annulée');
+  refreshCard(key);
+}
+function cancelHomelie(key){
+  const ds=G.days[key];if(!ds.homelie)return;
+  ds.homelie=false;
+  addScore(-PTS.homelie,'← Homélie annulée');
+  refreshCard(key);
+}
+function cancelAve(key){
+  const ds=G.days[key];if(!ds.ave)return;
+  const n=ds._aveSel||1;
+  ds.ave=false;G.totalAves=Math.max(0,G.totalAves-n);
+  addScore(-n*PTS.avePerAve,'← Ave Maria annulés');
+  refreshCard(key);
+}
+function undoChapelet(key){
+  if(G.chapeletCount<=0)return;
+  // revert to previous step
+  const prev=CHAP_STEPS.filter(v=>v<G.chapeletCount).pop()||0;
+  const removed=G.chapeletCount-prev;
+  G.chapeletCount=prev;
+  G.totalAves=Math.max(0,G.totalAves-removed);
+  addScore(-removed*PTS.chapPerAve,'← Chapelet : étape annulée');
+  refreshAllCards();
+}
+function undoRosaire(key){
+  if(G.rosaryCount<=0)return;
+  const prev=ROS_STEPS.map(o=>o.v).filter(v=>v<G.rosaryCount).pop()||0;
+  const removed=G.rosaryCount-prev;
+  G.rosaryCount=prev;
+  G.totalAves=Math.max(0,G.totalAves-removed);
+  addScore(-removed*PTS.chapPerAve,'← Rosaire : étape annulée');
+  refreshAllCards();
+}
 
 /* ── CONTRIBUTEUR ── */
 .contrib-day{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;}
@@ -520,11 +563,12 @@ const LITURGY = {
 <p><em>Je chanterai vos louanges, Seigneur, avec tout mon cœur.</em></p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion · Ps 26</h3>
 <p><em>Une seule chose j'ai demandée au Seigneur : que j'habite dans sa maison tous les jours de ma vie.</em></p>`,
-    homelie: `<p>Notre-Seigneur nous donne aujourd'hui une leçon qui dépasse de loin la morale naturelle : <em>« Si votre justice ne surpasse pas celle des scribes et des pharisiens, vous n'entrerez pas dans le Royaume des cieux. »</em> Parole terrible et lumineuse à la fois.</p>
-<p>Les pharisiens observaient la Loi à la lettre. Ils ne tuaient pas. Ils jeûnaient deux fois par semaine. Et pourtant, Notre-Seigneur les condamne. Parce que leur justice était extérieure, ostentatoire, orgueilleuse. Elle cherchait le regard des hommes, non la gloire de Dieu.</p>
-<p>La justice chrétienne, elle, va jusqu'à la racine du péché : la pensée, le désir, la colère intérieure. Il ne suffit pas de ne pas tuer — il faut ne pas haïr. Il ne suffit pas de faire l'aumône — il faut la faire dans le secret, pour Dieu seul.</p>
-<p>Saint Pierre nous enseigne le chemin de cette justice intérieure : <em>« Gardez votre langue du mal. »</em> La langue est le reflet du cœur. Contrôler sa langue, c'est commencer à contrôler ses passions. C'est le premier combat de la vie chrétienne.</p>
-<p>Examinons notre justice. Est-elle pharisaïque — un vernis social, une habitude confortable ? Ou est-elle chrétienne — une transformation intérieure, un renoncement à soi-même, un amour véritable de Dieu et du prochain ? La Messe nous donne la grâce de cette transformation. Recevons-la avec humilité.</p>`
+    homelie: `<p>Notre-Seigneur nous donne aujourd'hui une leçon qui dépasse de loin la morale naturelle, et même la morale philosophique la plus élevée : <em>« Si votre justice ne surpasse pas celle des scribes et des pharisiens, vous n'entrerez pas dans le Royaume des cieux. »</em> Parole terrible et lumineuse à la fois, qui devrait nous secouer dans notre confort spirituel.</p>
+<p>Les pharisiens observaient la Loi à la lettre. Ils ne tuaient pas. Ils jeûnaient deux fois par semaine. Ils payaient la dîme sur le moindre aromate de leur jardin. Aux yeux du monde, ils étaient des hommes parfaitement religieux. Et pourtant, Notre-Seigneur les condamne avec une sévérité qui ne laisse aucune ambiguïté. Pourquoi ? Parce que leur justice était extérieure, ostentatoire, orgueilleuse. Elle cherchait le regard et l'estime des hommes, non la gloire de Dieu.</p>
+<p>La justice chrétienne, elle, va jusqu'à la racine même du péché : la pensée, le désir, la colère intérieure. Il ne suffit pas de ne pas tuer — il faut ne pas haïr. Il ne suffit pas de ne pas commettre l'adultère — il faut garder son cœur pur dans ses pensées. Il ne suffit pas de faire l'aumône — il faut la faire dans le secret, pour Dieu seul, sans en attendre aucune gloire humaine.</p>
+<p>Notre-Seigneur va jusqu'à nous dire : si tu viens présenter ton offrande à l'autel et que tu te souviens que ton frère a quelque chose contre toi, laisse ton offrande et va d'abord te réconcilier. Quel renversement ! La liturgie elle-même, le culte divin, passe après la charité fraternelle. Car Dieu n'accepte pas l'offrande de celui dont le cœur est divisé par la haine ou l'amertume.</p>
+<p>Saint Pierre nous enseigne dans l'Épître le chemin concret de cette justice intérieure : <em>« Gardez votre langue du mal et vos lèvres des paroles trompeuses. »</em> La langue est le reflet du cœur. Contrôler sa langue, c'est commencer à contrôler ses passions. C'est le premier combat de la vie chrétienne, et souvent le plus difficile. Saint Jacques dira que celui qui tient sa langue en bride est un homme parfait.</p>
+<p>Mes frères, examinons notre justice à la lumière de ces paroles. Est-elle pharisaïque — un vernis social, une habitude confortable, une conformité extérieure qui nous donne bonne conscience ? Ou est-elle chrétienne — une transformation intérieure, un renoncement quotidien à nous-mêmes, un amour véritable de Dieu et du prochain qui va jusqu'à nous coûter quelque chose ? La Messe à laquelle nous assistons nous donne la grâce de cette transformation. Recevons-la avec humilité, et portons-la jusqu'au soir dans notre vie ordinaire.</p>`
   },
   '2026-6-28': {
     feast: 'Vigile des SS. Pierre et Paul',
@@ -545,10 +589,12 @@ const LITURGY = {
 <p>Jésus lui dit une deuxième fois, puis une troisième fois : <em>« Simon, fils de Jean, m'aimes-tu ? »</em> Pierre fut attristé et répondit : <em>« Seigneur, vous savez tout ; vous savez bien que je vous aime. »</em> Jésus lui dit : <em>« Pais mes brebis. »</em></p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
 <p><em>Simon, fils de Jean, m'aimes-tu ? Seigneur, vous savez tout, vous savez que je vous aime.</em></p>`,
-    homelie: `<p>La vigile nous prépare à la grande fête des Princes des Apôtres. L'Église nous met sous les yeux deux scènes saisissantes : Pierre qui guérit l'infirme au nom de Jésus-Christ, et Pierre qui reçoit le triple mandat de paître les brebis.</p>
-<p><em>« Je n'ai ni argent ni or, mais ce que j'ai, je te le donne. »</em> Pierre n'a rien de ce que le monde donne. Mais il a le Nom de Jésus-Christ — et ce Nom est une puissance. La vraie richesse de l'Église n'est pas dans ses biens temporels, mais dans la grâce du Christ qu'elle distribue aux âmes.</p>
-<p>Puis vient la question brûlante, répétée trois fois : <em>« M'aimes-tu ? »</em> Trois fois Pierre avait renié. Trois fois Notre-Seigneur lui donne l'occasion de confesser son amour. Quelle pédagogie divine ! Dieu ne garde pas rancune. Il guérit par le même acte qui a blessé.</p>
-<p>Mais cet amour a un prix : <em>« Pais mes brebis. »</em> L'amour du Christ oblige. Il oblige au service, au sacrifice, au don total de soi. Pierre mourra crucifié la tête en bas — par humilité, ne voulant pas mourir dans la même posture que son Maître. En cette vigile, demandons à saint Pierre la grâce d'un amour viril, courageux, fidèle jusqu'au bout.</p>`
+    homelie: `<p>La vigile nous prépare à la grande fête des Princes des Apôtres. Dans sa pédagogie admirable, la liturgie commence par nous mettre sous les yeux deux scènes saisissantes : Pierre qui guérit l'infirme au nom de Jésus-Christ, et Pierre qui reçoit de Notre-Seigneur le triple mandat de paître les brebis. Deux scènes qui résument toute la mission de l'Église.</p>
+<p><em>« Je n'ai ni argent ni or, mais ce que j'ai, je te le donne. »</em> Pierre n'a rien de ce que le monde donne. Il est un pêcheur sans fortune, sans titre, sans influence sociale. Mais il a le Nom de Jésus-Christ — et ce Nom est une puissance qui dépasse toutes les puissances humaines. La vraie richesse de l'Église n'est pas dans ses biens temporels, dans ses bâtiments ou ses institutions, mais dans la grâce du Christ qu'elle distribue aux âmes. Que nous méditons rarement sur cette vérité fondamentale !</p>
+<p>L'infirme attendait une aumône d'argent. Il reçut bien davantage : la santé de son corps, et à travers elle, l'annonce du salut de son âme. Dieu donne toujours plus que ce que nous demandons. Nos prières sont souvent trop petites, trop limitées à nos besoins immédiats et temporels. Apprenons à demander les grandes choses : la conversion des pécheurs, la sanctification des âmes, la victoire de l'Église.</p>
+<p>Puis vient la question brûlante, répétée trois fois : <em>« M'aimes-tu ? »</em> Trois fois Pierre avait renié, dans la nuit de la Passion. Trois fois Notre-Seigneur ressuscité lui donne l'occasion de confesser son amour — et par cet acte de foi et d'amour, efface les trois reniements. Quelle pédagogie divine ! Dieu ne garde pas rancune. Il guérit par le même acte qui a blessé. Là où le péché a abondé, la grâce surabonde.</p>
+<p>Mais cet amour a un prix, et Notre-Seigneur ne le cache pas : <em>« Pais mes brebis. »</em> L'amour du Christ oblige. Il oblige au service, au sacrifice, au don total de soi. Il oblige à aller là où l'on ne voudrait pas aller, comme Notre-Seigneur le dit explicitement à Pierre. Pierre mourra crucifié la tête en bas, par humilité suprême, ne voulant pas mourir dans la même posture que son Maître et Seigneur.</p>
+<p>En cette vigile, plaçons-nous spirituellement aux pieds de saint Pierre. Demandons-lui la grâce d'un amour vrai pour Notre-Seigneur — non pas un amour sentimental qui s'évanouit aux premières épreuves, comme il l'avait cru cette nuit-là dans la cour du Grand-Prêtre, mais un amour viril, courageux, éprouvé, fidèle jusqu'au martyre s'il le faut.</p>`
   },
   '2026-6-29': {
     feast: 'Saints Pierre et Paul, Apôtres',
@@ -570,10 +616,12 @@ const LITURGY = {
 <p>Jésus lui dit : <em>« Tu es heureux, Simon, car ce n'est pas la chair et le sang qui t'ont révélé cela, mais mon Père. Et moi, je te dis que tu es Pierre, et que sur cette Pierre je bâtirai mon Église, et les portes de l'enfer ne prévaudront pas contre elle. Je te donnerai les clefs du Royaume des cieux. »</em></p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
 <p><em>Tu es Pierre, et sur cette Pierre je bâtirai mon Église.</em></p>`,
-    homelie: `<p>L'Église célèbre aujourd'hui ses deux plus grandes colonnes : Pierre, le roc sur lequel elle est fondée, et Paul, l'apôtre des nations. Deux caractères opposés, un seul Esprit.</p>
-<p>Pierre est l'homme de la foi vivante et de la confession courageuse : <em>« Vous êtes le Christ, le Fils du Dieu vivant. »</em> Cette réponse n'est pas le fruit d'un raisonnement humain — Notre-Seigneur le dit lui-même : <em>« Ce n'est pas la chair et le sang qui t'ont révélé cela, mais mon Père. »</em> La foi véritable est une grâce. Elle ne s'acquiert pas par l'intelligence seule, mais par la docilité au Saint-Esprit.</p>
-<p>Sur cette foi, Notre-Seigneur bâtit son Église. Non sur une institution humaine — mais sur la confession de la divinité du Christ. Voilà le fondement inébranlable. Les portes de l'enfer ne prévaudront pas contre elle.</p>
-<p>En ces temps troublés où l'Église est secouée par des vents contraires, cette promesse doit être notre ancre : l'Église ne peut périr. Elle peut être persécutée, trahie, ridiculisée — elle ne peut pas mourir. Car son fondateur est Dieu lui-même. Saints Pierre et Paul, priez pour l'Église votre épouse. Obtenez-lui des pasteurs courageux, des fidèles fermes dans la foi.</p>`
+    homelie: `<p>L'Église célèbre aujourd'hui, dans toute la splendeur de sa liturgie, ses deux plus grandes colonnes : Pierre, le roc sur lequel elle est fondée, et Paul, le vase d'élection, l'apôtre des nations. Deux tempéraments opposés, deux vocations différentes, un seul Seigneur, une seule foi, un seul baptême.</p>
+<p>Pierre est l'homme de la foi vivante et de la confession courageuse. Quand tous hésitent, quand les opinions se multiplient, c'est Pierre qui tranche : <em>« Vous êtes le Christ, le Fils du Dieu vivant. »</em> Cette réponse n'est pas le fruit d'un raisonnement philosophique — Notre-Seigneur le dit lui-même avec une précision qui ne laisse aucun doute : <em>« Ce n'est pas la chair et le sang qui t'ont révélé cela, mais mon Père qui est dans les cieux. »</em> La foi véritable est une grâce. Elle ne s'acquiert pas par l'intelligence seule, ni par l'érudition, ni par la réflexion personnelle. Elle se reçoit à genoux.</p>
+<p>Sur cette foi, Notre-Seigneur bâtit son Église. Il aurait pu bâtir sur la sagesse, sur la culture, sur la puissance temporelle. Il a choisi de bâtir sur un pêcheur de Galilée qui venait de faire une confession de foi inspirée par l'Esprit-Saint. Non sur une institution humaine, non sur un système politique ou culturel — mais sur la confession de la divinité du Christ. Voilà le fondement inébranlable contre lequel les portes de l'enfer ne peuvent rien.</p>
+<p>Et Paul ? Paul est l'homme qui a tout sacrifié pour le Christ. <em>« Je regarde tout comme une perte à cause de l'excellence de la connaissance de Jésus-Christ mon Seigneur. »</em> Ses titres de pharisien, sa science de la Loi, sa réputation, sa vie confortable de docteur respecté — tout cela jeté aux ordures pour gagner le Christ. Il a couru jusqu'à l'extrémité du monde connu, souffert des persécutions inimaginables, et il a terminé sa course sous le glaive de Néron, non loin d'ici, sur la voie d'Ostie.</p>
+<p>En ces temps troublés où l'Église est secouée par des vents contraires, où la confusion s'est installée sur tant de questions essentielles, où des voix s'élèvent de toutes parts pour remettre en question les vérités les plus fondamentales, cette promesse de Notre-Seigneur doit être notre ancre inébranlable : l'Église ne peut périr. Elle peut être persécutée, trahie de l'intérieur, ridiculisée par le monde, réduite à une petite minorité — elle ne peut pas mourir. Car son fondateur est Dieu lui-même, et sa parole ne peut être défaite.</p>
+<p>Saints Pierre et Paul, vous dont le sang a rougi la terre de Rome, vous dont la foi a porté le monde, priez pour l'Église votre épouse en ce temps d'épreuve. Obtenez-lui des pasteurs qui vous ressemblent : courageux comme Pierre à confesser la foi sans compromis, ardents comme Paul à la propager jusqu'aux extrémités de la terre, et fidèles l'un et l'autre jusqu'au sacrifice suprême.</p>`
   },
   '2026-6-30': {
     feast: 'Commémoration de saint Paul Apôtre',
@@ -594,10 +642,12 @@ const LITURGY = {
 <p>Jésus répondit : <em>« Pouvez-vous boire le calice que je vais boire ? »</em> Ils lui dirent : <em>« Nous le pouvons. »</em> Jésus leur dit : <em>« Mon calice, vous le boirez. »</em></p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
 <p><em>Je vis, mais ce n'est plus moi qui vis, c'est le Christ qui vit en moi.</em></p>`,
-    homelie: `<p><em>« Je vis, mais ce n'est plus moi qui vis, c'est le Christ qui vit en moi. »</em> Cette phrase de saint Paul résume toute sa théologie et toute sa vie. Elle est le programme de toute vie chrétienne digne de ce nom.</p>
-<p>Paul était le plus fervent des pharisiens. Il avait tout : la science, la ferveur, la droiture morale. Il persécutait les chrétiens de bonne foi, croyant servir Dieu. Et c'est cet homme-là que Dieu a choisi pour être l'Apôtre des nations. Pour montrer que la grâce triomphe de tout, même de la résistance la plus opiniâtre.</p>
-<p>Sur le chemin de Damas, Paul est renversé. Et la première parole qu'il prononce est la parole de toute conversion sincère : <em>« Seigneur, que voulez-vous que je fasse ? »</em> C'est la reddition totale, la capitulation devant la vérité.</p>
-<p>À partir de ce moment, Paul ne vit plus pour lui-même. Il court, il souffre, il est battu, emprisonné, naufragé — et il continue. Parce que ce n'est plus lui qui vit, c'est le Christ. Voilà le secret de la sainteté : substituer au moi tyrannique la volonté de Dieu.</p>`
+    homelie: `<p><em>« Je vis, mais ce n'est plus moi qui vis, c'est le Christ qui vit en moi. »</em> Cette phrase de saint Paul, écrite depuis sa prison, résume toute sa théologie, toute sa spiritualité et toute sa vie. Elle devrait être méditée longuement par tout chrétien qui veut comprendre ce que signifie vivre de la foi.</p>
+<p>Avant sa conversion, Saul de Tarse était le plus fervent des pharisiens. Il avait tout ce que le monde religieux pouvait offrir : la science parfaite de la Loi, la ferveur sincère, la droiture morale irréprochable selon les critères de son milieu. Il persécutait les chrétiens de bonne foi, convaincu de servir Dieu. Et c'est précisément cet homme-là — dans son zèle mal éclairé, dans sa résistance opiniâtre à la grâce — que Dieu a choisi pour être l'Apôtre des nations. Mystère insondable de la divine élection !</p>
+<p>Sur le chemin de Damas, Paul est renversé par une lumière plus brillante que le soleil. Il tombe à terre, aveugle, sans défense. Et la première parole qu'il prononce est la parole de toute conversion sincère, la parole que Dieu attend de chacun d'entre nous : <em>« Seigneur, que voulez-vous que je fasse ? »</em> C'est la reddition totale, la capitulation inconditionnelle devant la vérité. C'est la mort du vieil homme et la naissance de l'homme nouveau.</p>
+<p>À partir de ce moment, Paul ne vit plus pour lui-même. Il ne vit plus pour sa carrière, pour sa réputation, pour son confort. Il court, il prêche, il souffre — battu de verges trois fois, lapidé une fois, naufragé trois fois, en danger constant sur les routes et dans les villes. Et à travers tout cela, il garde une joie inaltérable, parce que ce n'est plus lui qui vit, c'est le Christ.</p>
+<p>L'Évangile de ce jour nous rappelle que la gloire chrétienne n'est pas celle du monde. La mère des fils de Zébédée demande pour ses fils les premières places dans le Royaume. Notre-Seigneur répond : <em>« Pouvez-vous boire le calice que je vais boire ? »</em> La grandeur dans le Royaume de Dieu se mesure à la capacité de souffrir pour Lui, non à celle de commander aux autres.</p>
+<p>Voilà le secret de la sainteté que saint Paul nous révèle par sa vie : ne plus vivre pour soi. Substituer au moi tyrannique, capricieux, toujours insatisfait, la volonté de Dieu. C'est le chemin étroit dont parle l'Évangile — étroit, certes, mais c'est le seul chemin qui mène à la vie. Et comme le dit saint Paul avec une autorité qui vient de l'expérience : <em>« Je puis tout en Celui qui me fortifie. »</em></p>`
   },
   '2026-7-1': {
     feast: 'Précieux Sang de Notre-Seigneur Jésus-Christ',
@@ -621,10 +671,12 @@ const LITURGY = {
 <p><em>Calice de salut je prendrai et j'invoquerai le Nom du Seigneur.</em></p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
 <p><em>Le Sang du Christ purifiera notre conscience des œuvres mortes pour rendre un culte au Dieu vivant.</em></p>`,
-    homelie: `<p>Le Précieux Sang. Ce que l'Église nous propose de contempler aujourd'hui n'est pas une abstraction théologique, mais une réalité physique, historique, douloureuse et glorieuse : le Sang versé sur la Croix par Jésus-Christ, Fils de Dieu fait homme.</p>
-<p>L'Épître nous explique le mystère de la Rédemption. L'Ancienne Alliance exigeait du sang de boucs et de taureaux pour l'expiation des péchés. Mais ce sang animal ne pouvait que purifier extérieurement. Il en fallait un autre — le Sang d'un Dieu — pour atteindre la conscience et purifier l'âme.</p>
-<p>C'est ce Sang que Jean vit couler du côté transpercé. Sang et eau : les théologiens y voient une figure des deux sacrements principaux, le Baptême et l'Eucharistie, qui jaillirent du cœur ouvert du Christ.</p>
-<p>Chers fidèles, chaque Messe renouvelle ce sacrifice. L'autel est le Calvaire. Lorsque vous assistez à la Messe, vous n'assistez pas à un simple souvenir — vous êtes présents au sacrifice du Calvaire, rendu présent de manière non sanglante. Voilà pourquoi la Messe mérite notre plus grande révérence. C'est le Sang de Dieu qui est offert.</p>`
+    homelie: `<p>Le Précieux Sang. Ce que l'Église nous propose de contempler aujourd'hui n'est pas une abstraction théologique pour docteurs et savants. C'est une réalité physique, historique, douloureuse et glorieuse : le Sang versé goutte à goutte sur la Croix du Calvaire par Jésus-Christ, vrai Dieu et vrai homme, pour la rémission des péchés du monde entier.</p>
+<p>L'Épître aux Hébreux nous explique avec une précision magistrale le mystère de la Rédemption. Dans l'Ancienne Alliance, le Grand-Prêtre entrait une fois par an dans le Saint des Saints avec le sang des boucs et des taureaux pour l'expiation des péchés du peuple. Rite impressionnant, mais rite purement figuratif, incapable d'atteindre l'âme. Il en fallait un autre — le Sang d'un Dieu fait homme — pour purifier non seulement le corps mais la conscience, pour effacer non seulement la faute juridique mais la souillure intérieure.</p>
+<p>C'est ce Sang que Jean vit couler du côté transpercé. Sang et eau : les Pères de l'Église y ont unanimement vu une figure des deux sacrements principaux qui jaillirent du cœur ouvert du Christ mort sur la Croix — le Baptême et l'Eucharistie. L'Église est née du côté ouvert de son Seigneur, comme Ève avait été tirée du côté d'Adam endormi. Mystère d'amour qui dépasse toute intelligence créée.</p>
+<p>Méditons un instant sur ce que nous coûte notre rédemption. Chaque péché, le plus petit comme le plus grand, a exigé ce Sang. Quand nous péchons légèrement, par paresse, par distraction, par respect humain, nous oublions que ce péché — si petit soit-il — a contribué à l'agonie du Gethsémani, a enfoncé les épines dans le front sacré, a alourdi la Croix sur les épaules du Sauveur. Cette méditation n'est pas pour nous écraser, mais pour nous enseigner le prix infini de la grâce.</p>
+<p>Chers fidèles, chaque Messe renouvelle ce sacrifice de manière non sanglante. L'autel est le Calvaire. Le prêtre, instrument indigne mais réel, offre à Dieu le Père le même Sacrifice que celui du Calvaire. Lorsque vous assistez à la Messe, vous n'assistez pas à un simple souvenir commémoratif ou à une belle cérémonie — vous êtes mystiquement présents au sacrifice du Calvaire, rendu présent dans le temps et dans l'espace.</p>
+<p>Voilà pourquoi la Messe est le centre absolu de la vie chrétienne, et pourquoi elle mérite notre plus grande révérence, notre silence le plus recueilli, notre attention la plus totale. Chaque distraction volontaire à la Messe est une légèreté impardonnable devant la majesté de ce qui s'y accomplit. C'est le Sang de Dieu qui est offert. Rien de plus grand n'existe sur cette terre.</p>`
   },
   '2026-7-2': {
     feast: 'Visitation de la Bienheureuse Vierge Marie',
@@ -646,10 +698,13 @@ const LITURGY = {
 <p>Alors Marie dit : <em>« Mon âme glorifie le Seigneur, et mon esprit a tressailli de joie en Dieu mon Sauveur. »</em></p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
 <p><em>Heureuse êtes-vous, Vierge Marie, qui avez cru : les choses qui vous ont été dites de la part du Seigneur s'accompliront en vous.</em></p>`,
-    homelie: `<p>Voici l'une des scènes les plus tendres des Évangiles : deux femmes enceintes se rencontrent, et l'une sanctifie l'autre. Marie rend visite à Élisabeth — et au simple son de sa voix, Jean-Baptiste tressaille dans le sein de sa mère.</p>
-<p>Marie vient de recevoir l'annonce de l'Ange. Elle est Mère de Dieu depuis quelques heures. Et sa première réaction est non pas de s'installer dans la contemplation de ce mystère, mais de <em>partir avec diligence</em> pour se mettre au service d'Élisabeth. Voilà la charité des saints : on ne reste pas dans la joie de la grâce reçue — on court la porter aux autres.</p>
-<p>Elle porte le Christ avec elle. Partout où va Marie, elle apporte le Christ. C'est pourquoi Jean-Baptiste est sanctifié avant même de naître — touché par la présence du Seigneur que Marie porte en elle.</p>
-<p>Après la Sainte Communion, nous aussi nous Le portons en nous. Partons alors avec diligence — vers notre famille, notre travail, nos frères — porteurs de la présence du Christ. Que ceux que nous rencontrons tressaillent, eux aussi, à notre contact, parce qu'ils sentent en nous quelque chose qui n'est pas de ce monde.</p>`
+    homelie: `<p>Voici l'une des scènes les plus tendres, les plus lumineuses et les plus mystérieuses des Évangiles : deux femmes enceintes se rencontrent dans la montagne de Judée, et l'une sanctifie l'autre. Marie rend visite à sa cousine Élisabeth — et au simple son de sa voix, Jean-Baptiste, encore dans le sein maternel, tressaille de joie et est rempli du Saint-Esprit.</p>
+<p>Marie vient à peine de recevoir l'annonce de l'Ange Gabriel. Elle est Mère de Dieu depuis quelques heures — elle porte dans son sein le Verbe Éternel fait chair. Et sa première réaction n'est pas de s'installer dans la contemplation de ce mystère incompréhensible, ni de rester seule avec sa joie ineffable. Sa première réaction est de <em>partir avec diligence</em> pour se mettre au service d'Élisabeth, sa cousine âgée, dans le besoin. Voilà la charité des saints : on ne garde pas pour soi la grâce reçue — on court la porter aux autres.</p>
+<p>Ce détail de la <em>diligence</em> mérite qu'on s'y arrête. Marie ne traîne pas. Elle part vite. La grâce ne souffre pas la lenteur ni la procrastination. Quand Dieu donne une lumière, une inspiration, une motion de l'Esprit-Saint, il faut y répondre promptement, avant que le refroidissement de la nature ne l'étouffe. Saint Ignace disait que dans les grandes décisions spirituelles, le démon cherche toujours à gagner du temps pour affaiblir les résolutions généreuses.</p>
+<p>Elle porte le Christ avec elle. Partout où va Marie, elle apporte le Christ. C'est pourquoi Jean-Baptiste est sanctifié avant même de naître — atteint par la présence du Seigneur que sa Mère porte dans son sein virginal. Marie est le premier tabernacle, la première custode du Corps du Christ. Et nous, après chaque communion, nous sommes pendant quelques minutes ce tabernacle vivant. Quelle dignité ! Quelle responsabilité !</p>
+<p>Élisabeth est remplie du Saint-Esprit et s'écrie : <em>« D'où m'est-il donné que la Mère de mon Seigneur vienne vers moi ? »</em> C'est la première profession de foi publique en la maternité divine de Marie. Avant tous les conciles, avant tous les théologiens, c'est une simple femme dans sa maison de montagne qui reconnaît, sous l'inspiration divine, que l'enfant que Marie porte est son Seigneur et son Dieu.</p>
+<p>Puis Marie chante le Magnificat — le plus beau cantique de l'Écriture après les Psaumes. <em>« Mon âme glorifie le Seigneur, et mon esprit a tressailli de joie en Dieu mon Sauveur. »</em> La joie de Marie n'est pas une joie humaine qui vient de ce qu'on a ou de ce qu'on est — c'est une joie surnaturelle, une joie qui vient de Dieu et va vers Dieu. Apprenons de Marie à trouver notre joie non dans les créatures mais dans le Créateur. C'est la seule joie qui ne déçoit pas.</p>
+<p>Après la Sainte Communion, nous aussi nous portons le Christ en nous pendant quelques précieux instants. Partons alors avec la diligence de Marie — vers notre famille, notre travail, nos frères dans le besoin — porteurs de la présence du Christ. Que ceux que nous rencontrons tressaillent d'une joie qu'ils ne sauront pas tout de suite expliquer, parce qu'ils auront senti en nous quelque chose qui n'est pas de ce monde.</p>`
   },
   '2026-7-3': {
     feast: 'VIe Dimanche après la Pentecôte',
@@ -671,10 +726,13 @@ const LITURGY = {
 <p>Ses disciples lui répondirent : <em>« Comment pourrait-on les rassasier dans le désert ? »</em> Il leur demanda : <em>« Combien avez-vous de pains ? »</em> Ils répondirent : <em>« Sept. »</em> Il prit les sept pains, rendit grâces, les rompit et les donna à ses disciples pour les distribuer. Ils en mangèrent et furent rassasiés.</p>
 <h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion · Ps 26</h3>
 <p><em>Je demanderai au Seigneur une seule chose : que j'habite dans sa maison tous les jours de ma vie.</em></p>`,
-    homelie: `<p>Saint Paul nous révèle aujourd'hui le sens profond du Baptême. Ce sacrement n'est pas une simple cérémonie. C'est une mort et une résurrection. <em>« Nous avons été ensevelis avec lui par le baptême dans la mort. »</em></p>
-<p>Qui est mort au baptême ? Le vieil homme — cet Adam déchu qui porte en lui la concupiscence, l'orgueil, la révolte contre Dieu. Cet homme-là a été mis au tombeau avec le Christ. Et avec le Christ ressuscité, un homme nouveau est sorti du tombeau.</p>
-<p>Mais voici le drame : nous avons souvent oublié cette mort. Nous laissons le vieil homme se relever, reprendre ses habitudes. Nous vivons comme si le baptême n'avait rien changé.</p>
-<p>L'Évangile nous montre le Christ qui a compassion de la foule affamée dans le désert. Cette multiplication des pains est une figure de l'Eucharistie — ce Pain qui se multiplie sur les autels du monde entier depuis vingt siècles. Nous sommes cette foule dans le désert. Le monde ne peut pas nous nourrir. Seul le Pain eucharistique rassasie vraiment. Approchons-nous de lui avec foi, avec faim, avec l'humilité de celui qui sait qu'il ne peut rien sans Dieu.</p>`
+    homelie: `<p>Saint Paul nous révèle aujourd'hui, avec une profondeur et une clarté incomparables, le sens du Baptême. Ce sacrement n'est pas une belle cérémonie d'entrée dans l'Église, une sorte d'initiation sociale au christianisme. C'est une mort et une résurrection. <em>« Nous avons été ensevelis avec lui par le baptême dans la mort. »</em> Ces mots doivent résonner dans nos âmes comme une vérité redoutable et libératrice à la fois.</p>
+<p>Qui est mort au baptême ? Le vieil homme — cet Adam déchu que nous portons tous en nous, cet héritage de la chute originelle qui incline notre nature vers le péché, vers l'orgueil, vers la révolte contre Dieu. Cet homme-là a été mis au tombeau avec le Christ le jour de notre baptême. Et avec le Christ ressuscité, un homme nouveau est sorti des fonts baptismaux — un homme qui a reçu la vie divine, la grâce sanctifiante, la participation à la nature de Dieu lui-même.</p>
+<p>Mais voici le drame que nous vivons tous : nous avons oublié notre baptême. Nous laissons le vieil homme se relever, se secouer, reprendre ses habitudes, ses vices, ses vanités. Nous vivons comme si le baptême n'avait rien changé de fondamental, comme si la grâce était une fiction pieuse et non une réalité plus certaine que les réalités sensibles. C'est pourquoi la vie chrétienne est essentiellement une lutte — non pas contre Dieu ou contre les hommes, mais contre ce vieil homme qui veut reprendre ses droits.</p>
+<p>L'Évangile nous présente la multiplication des sept pains pour quatre mille personnes dans le désert. Scène magnifique qui préfigure l'Eucharistie avec une précision qui ne laisse pas de doute : Jésus prend le pain, rend grâces, le rompt, le donne à ses disciples pour le distribuer. C'est exactement le geste eucharistique, répété chaque jour sur tous les autels du monde depuis vingt siècles.</p>
+<p>Mais avant le miracle, il y a la compassion : <em>« J'ai compassion de cette foule. »</em> Ce n'est pas pour montrer sa puissance que Jésus multiplie les pains — c'est parce qu'il voit des hommes affamés et qu'il ne peut pas les renvoyer ainsi. Le Sacré-Cœur de Jésus est infiniment sensible à notre misère. Quelle que soit notre détresse — spirituelle, morale, même matérielle — il ne nous renvoie pas les mains vides.</p>
+<p>Nous sommes cette foule dans le désert. Le monde nous promet de nous nourrir avec ses plaisirs, ses richesses, ses idéologies, ses spectacles permanents. Mais chacun fait l'expérience, tôt ou tard, que tout cela laisse l'âme vide, assoiffée d'autre chose, malade d'un manque qu'elle ne sait pas toujours nommer. Saint Augustin l'avait dit avec son incomparable génie : <em>« Notre cœur est sans repos tant qu'il ne trouve sa paix en Toi. »</em> Seul le Pain eucharistique rassasie vraiment l'âme humaine. Approchons-nous de lui avec foi, avec faim, avec la sainte humilité de celui qui sait qu'il ne peut rien sans Dieu.</p>
+<p>Notons enfin qu'il reste sept corbeilles de morceaux après que quatre mille hommes ont mangé à satiété. L'Eucharistie ne s'épuise pas. La grâce divine est inépuisable. Plus nous nous approchons du Seigneur avec foi, plus il se donne. C'est la loi de l'Amour divin : il donne toujours davantage que nous ne demandons.</p>`
   }
 };
 
@@ -770,7 +828,7 @@ function buildCard(d){
   wrap.id='card-'+key;
   if(!isToday)wrap.classList.add('collapsed');
   const dots=states.map(s=>`<div class="dot${dotClass(s)}"></div>`).join('');
-  const hasHomelie=!!G.homélies[key];
+  const hasHomelie=!!G.homélies[key]||!!LITURGY[key];
   wrap.innerHTML=`
 <div class="day-hdr" onclick="toggleCard('${key}')">
   <div class="day-hdr-left">
@@ -787,7 +845,7 @@ function buildCard(d){
   <div class="section${ds.lectures?' done-section':''}" id="sec-lec-${key}">
     <div class="section-row">
       <span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M9 13 Q9 11 11 11 L29 11 L29 49 L11 49 Q9 49 9 47 Z" fill="#e8e8e4" stroke="#b8b8b0" stroke-width="1.5"/><path d="M51 13 Q51 11 49 11 L31 11 L31 49 L49 49 Q51 49 51 47 Z" fill="#f4f4f0" stroke="#b8b8b0" stroke-width="1.5"/><rect x="28" y="10" width="4" height="40" rx="2" fill="#2a2a26"/><line x1="13" y1="20" x2="26" y2="20" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="27" x2="26" y2="27" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="34" x2="26" y2="34" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="41" x2="22" y2="41" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><rect x="37" y="17" width="3" height="14" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="32" y="21" width="13" height="3" rx="1" fill="#2a2a26" opacity="0.4"/><line x1="34" y1="37" x2="47" y2="37" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="34" y1="44" x2="43" y2="44" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><path d="M21 49 L21 58 L25 54 L29 58 L29 49" fill="#b52a1a"/></svg>Lectures du jour</span>
-      <button class="pill${ds.lectures?' green':' red'}" id="btn-lec-${key}" onclick="openReader('${key}','lecture')" style="pointer-events:all;cursor:pointer;">
+      <button class="pill${ds.lectures?' green':' red'}" id="btn-lec-${key}" onclick="${ds.lectures?`cancelLecture('${key}')`:`openReader('${key}','lecture')`}" style="pointer-events:all;cursor:pointer;">
         ${ds.lectures?'Lu ✓':'Lire'}
       </button>
     </div>
@@ -796,7 +854,7 @@ function buildCard(d){
   <div class="section${ds.homelie?' done-section':''}" id="sec-hom-${key}">
     <div class="section-row">
       <span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M15 60 L15 37 Q15 31 21 30 L39 30 Q45 31 45 37 L45 60 Z" fill="#1a1a18"/><rect x="24" y="28" width="12" height="5" rx="1.5" fill="white"/><rect x="28" y="28" width="4" height="5" rx="0.5" fill="#1a1a18"/><ellipse cx="30" cy="18" rx="10" ry="11" fill="#d4a882"/><path d="M20 15 Q20 7 30 7 Q40 7 40 15" fill="#2a1a0a"/><circle cx="30" cy="40" r="1.2" fill="#2a2a26" opacity="0.35"/><circle cx="30" cy="48" r="1.2" fill="#2a2a26" opacity="0.35"/></svg>Homélie</span>
-      <button class="pill${ds.homelie?' green':' red'}" id="btn-hom-${key}" onclick="openReader('${key}','homelie')" style="pointer-events:all;cursor:pointer;">
+      <button class="pill${ds.homelie?' green':' red'}" id="btn-hom-${key}" onclick="${ds.homelie?`cancelHomelie('${key}')`:`openReader('${key}','homelie')`}" style="pointer-events:all;cursor:pointer;">
         ${ds.homelie?'Médité ✓':'Méditer'}
       </button>
     </div>
@@ -810,7 +868,7 @@ function buildCard(d){
 function secAve(key,ds){
   const sel=G.days[key]._aveSel||0;const hasSel=sel>0;
   const pills=AVE_OPTIONS.map(o=>`<button class="sub-pill${sel===o.v?' selected':''}" onclick="selAve('${key}',${o.v})">${o.l}</button>`).join('');
-  const btn=ds.ave?`<span class="pill green">Prié ✓</span>`:`<button class="pill${hasSel?' green':' red'}" id="btn-ave-${key}" onclick="doAve('${key}')">Prier${hasSel?' ✓':''}</button>`;
+  const btn=ds.ave?`<button class="pill green" onclick="cancelAve('${key}')">Prié ✓</button>`:`<button class="pill${hasSel?' green':' red'}" id="btn-ave-${key}" onclick="doAve('${key}')">Prier${hasSel?' ✓':''}</button>`;
   return `<div class="section${ds.ave?' done-section':''}" id="sec-ave-${key}">
   <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><line x1="30" y1="6" x2="30" y2="1" stroke="#d4a820" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/><line x1="38" y1="8" x2="41" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><line x1="22" y1="8" x2="19" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><circle cx="30" cy="15" r="9" fill="none" stroke="#d4a820" stroke-width="1.5" opacity="0.8"/><circle cx="30" cy="6.5" r="1.4" fill="#d4a820"/><circle cx="36.5" cy="8.5" r="1.1" fill="#d4a820"/><circle cx="23.5" cy="8.5" r="1.1" fill="#d4a820"/><ellipse cx="30" cy="15" rx="7" ry="7.5" fill="#f0d4b0"/><path d="M19 18 Q19 13 24 12 L30 11 L36 12 Q41 13 41 18 L41 23 Q36 21 30 21 Q24 21 19 23 Z" fill="#2a5a9a"/><path d="M13 60 L13 34 Q13 25 21 23 L30 21 L39 23 Q47 25 47 34 L47 60 Z" fill="#2a5a9a"/><path d="M21 60 L21 38 Q21 30 30 28 Q39 30 39 38 L39 60 Z" fill="#f0f0ea"/><path d="M25 40 Q25 37 30 36 Q35 37 35 40 L35 45 Q30 46 25 45 Z" fill="#f0d4b0"/><line x1="23" y1="44" x2="15" y2="54" stroke="#d4a820" stroke-width="1.2" opacity="0.5" stroke-linecap="round"/><line x1="37" y1="44" x2="45" y2="54" stroke="#d4a820" stroke-width="1.2" opacity="0.5" stroke-linecap="round"/></svg>Je vous salue Marie</span>${btn}</div>
   ${!ds.ave?`<div class="sub-pills">${pills}</div>`:''}
@@ -820,7 +878,7 @@ function secChapelet(key,dow){
   const count=G.chapeletCount;const isDone=count>=50;const inProg=count>0&&count<50;
   const pct=Math.min(100,Math.round(count/50*100));
   const stepPills=CHAP_STEPS.map(v=>`<button class="sub-pill${count>=v?' used':''}" onclick="addChapelet(${v},'${key}')">${v}×</button>`).join('');
-  const pillBtn=isDone?`<span class="pill green">Complété ✓</span>`:inProg?`<span class="pill orange">En cours…</span>`:`<span class="pill red">Commencer</span>`;
+  const pillBtn=isDone?`<button class="pill green" onclick="undoChapelet('${key}')">Complété ✓</button>`:inProg?`<button class="pill orange" onclick="undoChapelet('${key}')">En cours…</button>`:`<span class="pill red">Commencer</span>`;
   return `<div class="section" id="sec-chap-${key}">
   <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><circle cx="30" cy="27" r="17" fill="none" stroke="#b8b8b0" stroke-width="1.3" stroke-dasharray="2.8 3.2"/><circle cx="30" cy="10" r="3.2" fill="#2a2a26"/><circle cx="44" cy="18" r="3.2" fill="#2a2a26"/><circle cx="44" cy="35" r="3.2" fill="#2a2a26"/><circle cx="30" cy="44" r="3.2" fill="#2a2a26"/><circle cx="16" cy="35" r="3.2" fill="#2a2a26"/><circle cx="16" cy="18" r="3.2" fill="#2a2a26"/><circle cx="37.5" cy="12" r="2" fill="#565650"/><circle cx="41.5" cy="15" r="2" fill="#565650"/><circle cx="45" cy="27" r="2" fill="#565650"/><circle cx="45" cy="31" r="2" fill="#565650"/><circle cx="37.5" cy="42" r="2" fill="#565650"/><circle cx="22.5" cy="42" r="2" fill="#565650"/><circle cx="15" cy="31" r="2" fill="#565650"/><circle cx="15" cy="27" r="2" fill="#565650"/><circle cx="22.5" cy="12" r="2" fill="#565650"/><circle cx="18.5" cy="15" r="2" fill="#565650"/><line x1="30" y1="47" x2="30" y2="52" stroke="#b8b8b0" stroke-width="1.8"/><circle cx="30" cy="50" r="1.8" fill="#565650"/><rect x="28.2" y="52" width="3.6" height="8" rx="1.2" fill="#2a2a26"/><rect x="25" y="55" width="10" height="3" rx="1.2" fill="#2a2a26"/></svg>Chapelet</span>${pillBtn}</div>
   <div style="font-size:10px;color:var(--muted);margin-top:3px;">${MYSTERY_TYPES[dow]}</div>
@@ -832,7 +890,7 @@ function secRosaire(key){
   const count=G.rosaryCount;const isDone=count>=150;const inProg=count>0&&count<150;
   const pct=Math.min(100,Math.round(count/150*100));
   const stepPills=ROS_STEPS.map(o=>`<button class="sub-pill${count>=o.v?' used':''}" onclick="addRosaire(${o.v},'${key}')">${o.l}</button>`).join('');
-  const pillBtn=isDone?`<span class="pill green">Accompli ✓</span>`:inProg?`<span class="pill orange">En cours…</span>`:`<span class="pill red">Commencer</span>`;
+  const pillBtn=isDone?`<button class="pill green" onclick="undoRosaire('${key}')">Accompli ✓</button>`:inProg?`<button class="pill orange" onclick="undoRosaire('${key}')">En cours…</button>`:`<span class="pill red">Commencer</span>`;
   return `<div class="section" id="sec-ros-${key}">
   <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M11 42 L11 30 L20 37 L30 19 L40 37 L49 30 L49 42 Z" fill="#2a2a26"/><rect x="11" y="40" width="38" height="8" rx="2.5" fill="#2a2a26"/><rect x="11" y="40" width="38" height="3.5" rx="1.5" fill="#d4a820"/><circle cx="30" cy="41.5" r="3" fill="#8b1a1a"/><circle cx="20" cy="41.5" r="2" fill="#d4a820"/><circle cx="40" cy="41.5" r="2" fill="#d4a820"/><circle cx="30" cy="19" r="3" fill="#d4a820"/><circle cx="20" cy="37" r="2.4" fill="#d4a820"/><circle cx="40" cy="37" r="2.4" fill="#d4a820"/><circle cx="11" cy="30" r="2.2" fill="#d4a820"/><circle cx="49" cy="30" r="2.2" fill="#d4a820"/><rect x="28.8" y="11" width="2.4" height="7" rx="1" fill="#d4a820"/><rect x="26" y="13.5" width="8" height="2.4" rx="1" fill="#d4a820"/></svg>Rosaire</span>${pillBtn}</div>
   <div style="font-size:10px;color:var(--muted);margin-top:3px;">3 chapelets · 150 Ave Maria</div>
@@ -928,6 +986,47 @@ function addRosaire(v,key){
   const added=v-G.rosaryCount;G.rosaryCount=v;G.totalAves+=added;
   addScore(added*PTS.chapPerAve,'Rosaire +'+added*PTS.chapPerAve+' pts');
   if(G.rosaryCount>=150){G.totalRosaries++;setTimeout(()=>{addScore(PTS.rosBonus,'🌹 Rosaire accompli +'+PTS.rosBonus+' bonus');setTimeout(()=>{G.rosaryCount=0;refreshAllCards();},1500);},300);}
+  refreshAllCards();
+}
+
+
+/* ── ANNULER ── */
+function cancelLecture(key){
+  const ds=G.days[key];if(!ds.lectures)return;
+  ds.lectures=false;
+  addScore(-PTS.lecture,'← Lecture annulée');
+  refreshCard(key);
+}
+function cancelHomelie(key){
+  const ds=G.days[key];if(!ds.homelie)return;
+  ds.homelie=false;
+  addScore(-PTS.homelie,'← Homélie annulée');
+  refreshCard(key);
+}
+function cancelAve(key){
+  const ds=G.days[key];if(!ds.ave)return;
+  const n=ds._aveSel||1;
+  ds.ave=false;G.totalAves=Math.max(0,G.totalAves-n);
+  addScore(-n*PTS.avePerAve,'← Ave Maria annulés');
+  refreshCard(key);
+}
+function undoChapelet(key){
+  if(G.chapeletCount<=0)return;
+  // revert to previous step
+  const prev=CHAP_STEPS.filter(v=>v<G.chapeletCount).pop()||0;
+  const removed=G.chapeletCount-prev;
+  G.chapeletCount=prev;
+  G.totalAves=Math.max(0,G.totalAves-removed);
+  addScore(-removed*PTS.chapPerAve,'← Chapelet : étape annulée');
+  refreshAllCards();
+}
+function undoRosaire(key){
+  if(G.rosaryCount<=0)return;
+  const prev=ROS_STEPS.map(o=>o.v).filter(v=>v<G.rosaryCount).pop()||0;
+  const removed=G.rosaryCount-prev;
+  G.rosaryCount=prev;
+  G.totalAves=Math.max(0,G.totalAves-removed);
+  addScore(-removed*PTS.chapPerAve,'← Rosaire : étape annulée');
   refreshAllCards();
 }
 
