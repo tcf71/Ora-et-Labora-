@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ora et Labora">
+<meta name="theme-color" content="#e8e8e4">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzJhMmEyNiIvPjxyZWN0IHg9Ijc4IiB5PSIzMCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjEyMCIgcng9IjgiIGZpbGw9IiNlOGU4ZTQiLz48cmVjdCB4PSIzNiIgeT0iNjYiIHdpZHRoPSIxMDgiIGhlaWdodD0iMjQiIHJ4PSI4IiBmaWxsPSIjZThlOGU0Ii8+PC9zdmc+">
+<link rel="manifest" href="manifest.json">
+<title>Ora et Labora</title>
+<style>
+:root {
+  --accent:#2a2a26; --bg:#e8e8e4; --card:#dcdcd6; --border:#b8b8b0;
+  --done-bg:#d0f0dc; --done-border:#1e7a42; --done-text:#145e2e;
+  --red-bg:#fde8e8; --red-border:#b52a1a; --red-text:#b52a1a;
+  --orange-bg:#fff0e0; --orange-border:#d97706; --orange-text:#92400e;
+  --muted:#565650; --text:#111110;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe UI',sans-serif;color:var(--text);}
+
+/* PAGES */
+.page{display:none;min-height:100vh;padding-bottom:24px;}
+.page.active{display:block;}
+
+/* GLOBAL HEADER */
+#global-hdr{
+  position:sticky;top:0;z-index:50;
+  background:rgba(232,232,228,0.96);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;
+}
+.hdr-left{display:flex;align-items:center;gap:8px;}
+.hdr-back{background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:2px 6px;display:none;}
+.hdr-back.visible{display:block;}
+.hdr-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;}
+.hdr-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.hdr-right{display:flex;align-items:center;gap:7px;}
+.score-chip{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--accent);}
+.score-chip .sc-label{font-size:9px;font-weight:400;color:var(--muted);}
+.icon-btn{width:32px;height:32px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;font-size:15px;color:var(--accent);}
+.icon-btn:hover{border-color:var(--accent);}
+.icon-btn.active-page{border-color:var(--accent);background:var(--accent);color:#fff;}
+
+/* FEED */
+#feed{padding:14px 14px 0;display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto;}
+.day-card{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;transition:border-color 0.3s;scroll-margin-top:60px;}
+.day-card.today{border-color:var(--accent);}
+.day-card.complete{border-color:var(--done-border);}
+.day-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 9px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.day-hdr-left{display:flex;align-items:center;gap:10px;}
+.day-num-badge{width:36px;height:36px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex-shrink:0;}
+.day-card.today .day-num-badge{border-color:var(--accent);background:rgba(42,42,38,0.08);}
+.day-card.complete .day-num-badge{border-color:var(--done-border);background:var(--done-bg);}
+.dn{font-size:14px;font-weight:600;color:var(--text);}
+.day-card.today .dn{color:var(--accent);}
+.dm{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
+.dname{font-size:13px;font-weight:600;color:var(--text);}
+.day-card.today .dname{color:var(--accent);}
+.dfeast{font-size:10px;color:var(--muted);margin-top:1px;}
+.day-progress-dots{display:flex;gap:4px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--red-border);transition:background 0.3s;}
+.dot.done{background:var(--done-text);}
+.dot.prog{background:var(--orange-border);}
+.day-preview{padding:7px 14px 10px;font-size:11px;color:var(--muted);font-style:italic;display:none;}
+.day-card.collapsed .day-preview{display:block;}
+.day-body{display:block;}
+.day-card.collapsed .day-body{display:none;}
+.chev{font-size:13px;color:var(--muted);transition:transform 0.2s;display:inline-block;}
+
+/* SECTIONS */
+.section{padding:10px 14px;border-top:1px solid var(--border);}
+.section-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.section-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);}
+.cross{font-size:11px;color:var(--accent);}
+.pill{display:inline-flex;align-items:center;justify-content:center;width:108px;padding:7px 0;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all 0.25s;white-space:nowrap;background:transparent;flex-shrink:0;}
+.pill.red{color:var(--red-text);border-color:var(--red-border);background:var(--red-bg);}
+.pill.red:hover{filter:brightness(0.93);transform:scale(1.02);}
+.pill.green{color:var(--done-text);border-color:var(--done-border);background:var(--done-bg);cursor:pointer;}
+.pill.orange{color:var(--orange-text);border-color:var(--orange-border);background:var(--orange-bg);cursor:default;pointer-events:none;}
+.pill.flipping{animation:flip 0.22s ease;}
+@keyframes flip{0%{transform:scale(1)}40%{transform:scale(0.88)}100%{transform:scale(1)}}
+.section.done-section{background:rgba(30,122,66,0.06);}
+.sub-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.sub-pill{padding:5px 11px;border-radius:999px;font-size:10px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all 0.18s;}
+.sub-pill:hover{border-color:var(--accent);color:var(--accent);}
+.sub-pill.selected{border-color:var(--accent);color:var(--accent);background:rgba(42,42,38,0.07);}
+.sub-pill.used{border-color:var(--border);color:var(--border);cursor:default;pointer-events:none;text-decoration:line-through;}
+.chap-bar-track{height:4px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden;}
+.chap-bar-fill{height:4px;background:var(--orange-border);border-radius:2px;transition:width 0.4s;}
+.chap-bar-fill.complete{background:var(--done-border);}
+.chap-progress{font-size:10px;color:var(--muted);margin-top:6px;}
+
+/* ── READER MODAL ── */
+#reader{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:var(--bg);overflow-y:auto;
+}
+#reader.open{display:block;}
+#reader-hdr{
+  position:sticky;top:0;background:rgba(232,232,228,0.96);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+#reader-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:2px 8px;}
+#reader-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);}
+#reader-date{font-size:11px;color:var(--muted);margin-top:1px;}
+#reader-body{max-width:480px;margin:0 auto;padding:24px 20px 40px;}
+#reader-ref{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:16px;}
+#reader-text{font-size:15px;line-height:1.85;color:var(--text);}
+#reader-text p{margin-bottom:14px;}
+#reader-done-btn{
+  display:block;width:calc(100% - 40px);margin:24px auto 0;
+  padding:13px;border-radius:999px;font-size:13px;font-weight:600;
+  border:1.5px solid var(--accent);background:var(--accent);color:#fff;
+  cursor:pointer;transition:all 0.2s;text-align:center;
+}
+#reader-done-btn:hover{filter:brightness(1.2);}
+#reader-done-btn.done{background:var(--done-bg);border-color:var(--done-border);color:var(--done-text);}
+
+/* ── PAGE MON COMPTE ── */
+.compte-hero{background:var(--card);border-bottom:1px solid var(--border);padding:24px 20px;text-align:center;}
+.compte-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid var(--accent);margin:0 auto 10px;}
+.compte-name{font-size:17px;font-weight:700;color:var(--text);}
+.compte-title{font-size:11px;color:var(--muted);margin-top:2px;}
+.compte-score-block{display:inline-flex;align-items:baseline;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:8px 18px;margin-top:12px;}
+.big-score{font-size:28px;font-weight:700;color:var(--accent);}
+.score-unit{font-size:12px;color:var(--muted);}
+.compte-body{padding:14px 14px 0;max-width:480px;margin:0 auto;}
+.compte-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;}
+.compte-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:12px;}
+.field-row{margin-bottom:10px;}
+.field-row:last-child{margin-bottom:0;}
+.field-label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.field-input{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:var(--accent);}
+.cta-btn{width:100%;padding:11px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--accent);background:var(--accent);color:#fff;transition:all 0.2s;margin-top:6px;}
+.cta-btn:hover{filter:brightness(1.15);}
+.cta-btn.outline{background:transparent;color:var(--accent);}
+.stat-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.stat-tile{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;}
+.stat-tile .sv{font-size:20px;font-weight:700;color:var(--accent);}
+.stat-tile .sl{font-size:9px;color:var(--muted);margin-top:2px;}
+.badges{display:flex;flex-wrap:wrap;gap:6px;}
+.badge{padding:4px 10px;border-radius:999px;font-size:10px;font-weight:600;border:1px solid var(--border);color:var(--muted);}
+.badge.earned{border-color:var(--accent);color:var(--accent);}
+
+/* ── CONTRIBUTEUR ── */
+.contrib-day{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;}
+.contrib-day-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.contrib-day-label{font-size:13px;font-weight:600;color:var(--text);}
+.contrib-day-feast{font-size:10px;color:var(--muted);margin-top:2px;}
+.status-pill{padding:3px 10px;border-radius:999px;font-size:10px;font-weight:600;border:1.5px solid;}
+.status-pill.empty{color:var(--red-text);border-color:var(--red-border);background:var(--red-bg);}
+.status-pill.draft{color:var(--orange-text);border-color:var(--orange-border);background:var(--orange-bg);}
+.status-pill.published{color:var(--done-text);border-color:var(--done-border);background:var(--done-bg);}
+.ref-block{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px;border:1px solid var(--border);}
+.ref-block strong{color:var(--text);}
+textarea.homelie-input{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;color:var(--text);outline:none;resize:vertical;min-height:120px;line-height:1.6;font-family:inherit;transition:border-color 0.2s;}
+textarea.homelie-input:focus{border-color:var(--accent);}
+.pub-btn{padding:8px 18px;border-radius:999px;font-size:11px;font-weight:600;border:1.5px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+.pub-btn:hover{filter:brightness(1.15);}
+.pub-btn.done{background:var(--done-bg);border-color:var(--done-border);color:var(--done-text);pointer-events:none;}
+
+/* ── PAGE SOUTENIR ── */
+.soutenir-body{padding:14px 14px 0;max-width:480px;margin:0 auto;}
+.soutenir-hero{text-align:center;padding:20px 0 16px;}
+.soutenir-hero h2{font-size:17px;font-weight:700;color:var(--text);margin-top:8px;}
+.soutenir-hero p{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;}
+.don-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;}
+.don-card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:12px;}
+.don-amounts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.don-amt{padding:8px 4px;border-radius:12px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all 0.18s;text-align:center;}
+.don-amt:hover{border-color:var(--accent);color:var(--accent);}
+.don-amt.selected{border-color:var(--accent);color:var(--accent);background:rgba(42,42,38,0.07);}
+.don-custom{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;color:var(--text);outline:none;margin-bottom:10px;}
+.don-custom:focus{border-color:var(--accent);}
+.recurrence-toggle{display:flex;gap:6px;margin-bottom:12px;}
+.rec-btn{flex:1;padding:7px;border-radius:999px;font-size:11px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all 0.2s;text-align:center;}
+.rec-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(42,42,38,0.07);}
+.impact-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.5;}
+.impact-row:first-child{border-top:none;}
+.impact-amount{font-weight:600;color:var(--accent);min-width:32px;flex-shrink:0;}
+.transparency-box{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.transparency-box .tb-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px;}
+.tb-row{display:flex;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted);line-height:1.5;}
+.tb-row:last-child{margin-bottom:0;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card);border:1.5px solid var(--accent);color:var(--accent);font-size:12px;font-weight:600;padding:9px 18px;border-radius:999px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- GLOBAL HEADER -->
+<div id="global-hdr">
+  <div class="hdr-left">
+    <button class="hdr-back" id="hdr-back" onclick="goBack()">‹</button>
+    <div>
+      <div class="hdr-title" id="hdr-title-txt">✝ Ora et Labora</div>
+      <div class="hdr-sub" id="hdr-date"></div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="score-chip"><span id="hdr-score">0</span><span class="sc-label">&nbsp;pts</span></div>
+    <div class="icon-btn" id="icon-compte" onclick="goPage('compte')" title="Mon compte"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="8" r="4" fill="#2a2a26"/><path d="M4 20 Q4 14 12 14 Q20 14 20 20" stroke="#2a2a26" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+    <div class="icon-btn" id="icon-soutenir" onclick="goPage('soutenir')" title="Soutenir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M12 21 C12 21 3 14 3 8 A4 4 0 0 1 11 7 L12 8 L13 7 A4 4 0 0 1 21 8 C21 14 12 21 12 21Z" fill="#b52a1a"/></svg></div>
+  </div>
+</div>
+
+<!-- PAGE PRIÈRES -->
+<div class="page active" id="page-prieres">
+  <div id="feed"></div>
+</div>
+
+<!-- PAGE MON COMPTE -->
+<div class="page" id="page-compte">
+  <div class="compte-hero">
+    <div class="compte-avatar">✝</div>
+    <div class="compte-name" id="c-name">—</div>
+    <div class="compte-title" id="c-title">Novice en prière</div>
+    <div class="compte-score-block">
+      <span class="big-score" id="c-score">0</span>
+      <span class="score-unit">points</span>
+    </div>
+  </div>
+  <div class="compte-body">
+    <div class="compte-section">
+      <div class="compte-section-title">Mes informations</div>
+      <div class="field-row"><div class="field-label">Prénom</div><input class="field-input" id="f-prenom" type="text" placeholder="Votre prénom" oninput="saveProfile()"></div>
+      <div class="field-row"><div class="field-label">Nom</div><input class="field-input" id="f-nom" type="text" placeholder="Votre nom" oninput="saveProfile()"></div>
+      <div class="field-row"><div class="field-label">Adresse e-mail</div><input class="field-input" id="f-email" type="email" placeholder="votre@email.com" oninput="saveProfile()"></div>
+      <div class="field-row"><div class="field-label">Mot de passe</div><input class="field-input" id="f-mdp" type="password" placeholder="••••••••" oninput="saveProfile()"></div>
+      <button class="cta-btn" onclick="saveProfile();showToast('✓ Profil enregistré')">Enregistrer</button>
+    </div>
+    <div class="compte-section">
+      <div class="compte-section-title">Ma progression</div>
+      <div class="stat-grid-3" id="c-stats"></div>
+    </div>
+    <div class="compte-section">
+      <div class="compte-section-title">Médailles</div>
+      <div class="badges" id="c-badges"></div>
+    </div>
+    <div class="compte-section">
+      <div class="compte-section-title">Barème de points</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.8;">
+        <b style="color:var(--text);">Gains :</b> Lecture +15 · Homélie +20 · Ave Maria +1/Ave<br>
+        Chapelet +2/Ave · Bonus chapelet complet +40<br>
+        Bonus rosaire complet +120<br><br>
+        <b style="color:var(--red-text);">Pénalités :</b> Jour sans prière −50 · Jour incomplet −10
+      </div>
+    </div>
+    <!-- Accès contributeur — visible si role=contributeur -->
+    <div class="compte-section" id="contrib-access" style="display:none;">
+      <div class="compte-section-title">✝ Espace contributeur</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Rédigez les homélies pour vos jours assignés.</p>
+      <button class="cta-btn outline" onclick="goPage('contributeur')">Accéder à mon espace →</button>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- PAGE CONTRIBUTEUR -->
+<div class="page" id="page-contributeur">
+  <div class="compte-body" style="padding-top:14px;">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="contrib-subtitle"></div>
+    <div id="contrib-list"></div>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- PAGE SOUTENIR -->
+<div class="page" id="page-soutenir">
+  <div class="soutenir-body">
+    <div class="soutenir-hero">
+      <div style="font-size:36px;">🙏</div>
+      <h2>Votre soutien compte</h2>
+      <p>Ora et Labora est une application gratuite au service de la prière quotidienne.</p>
+    </div>
+    <div class="transparency-box">
+      <div class="tb-title">✝ 100% des dons sont reversés</div>
+      <div class="tb-row"><span>🕊</span><span>Aux <strong style="color:var(--text);">prêtres</strong> qui élaborent chaque jour l'homélie quotidienne, offrant leur temps et leur charisme au service de votre prière.</span></div>
+      <div class="tb-row"><span>🌍</span><span>À des <strong style="color:var(--text);">œuvres catholiques</strong> engagées pour soutenir l'action de l'Église dans le monde — évangélisation, aide aux plus démunis, formation spirituelle.</span></div>
+    </div>
+    <div class="don-card">
+      <div class="don-card-title">Choisir un montant</div>
+      <div class="don-amounts">
+        <div class="don-amt" onclick="selDon(3,this)">3 €</div>
+        <div class="don-amt selected" onclick="selDon(5,this)">5 €</div>
+        <div class="don-amt" onclick="selDon(10,this)">10 €</div>
+        <div class="don-amt" onclick="selDon(20,this)">20 €</div>
+      </div>
+      <input class="don-custom" type="number" placeholder="Autre montant (€)" oninput="selDonCustom(this)">
+      <div class="recurrence-toggle">
+        <div class="rec-btn active" id="rec-once" onclick="setRec('once')">Don unique</div>
+        <div class="rec-btn" id="rec-monthly" onclick="setRec('monthly')">Mensuel</div>
+      </div>
+      <button class="cta-btn" onclick="showToast('🙏 Merci — redirection vers le paiement…')">
+        Faire un don <span id="don-recap">de 5 €</span>
+      </button>
+    </div>
+    <div class="don-card">
+      <div class="don-card-title">Votre don en action</div>
+      <div class="impact-row"><span class="impact-amount">3 €</span><span>finance les lectures liturgiques du mois</span></div>
+      <div class="impact-row"><span class="impact-amount">5 €</span><span>couvre les frais serveur pour un utilisateur</span></div>
+      <div class="impact-row"><span class="impact-amount">10 €</span><span>rémunère une homélie rédigée par un prêtre</span></div>
+      <div class="impact-row"><span class="impact-amount">20 €</span><span>soutient une œuvre catholique pour une semaine</span></div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- READER MODAL -->
+<div id="reader">
+  <div id="reader-hdr">
+    <div>
+      <div id="reader-label"></div>
+      <div id="reader-date"></div>
+    </div>
+    <button id="reader-close" onclick="closeReader()">✕</button>
+  </div>
+  <div id="reader-body">
+    <div id="reader-ref"></div>
+    <div id="reader-text"></div>
+    <button id="reader-done-btn" onclick="markReaderDone()">J'ai lu — marquer comme fait ✓</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const MONTHS=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+const MONTHS_LONG=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const FEASTS={1:'Sainte Marie Mère de Dieu',6:'Épiphanie du Seigneur',25:'Nativité du Seigneur',1601:'Ss Pierre & Paul'};
+const MYSTERY_TYPES=['Mystères joyeux','Mystères lumineux','Mystères douloureux','Mystères glorieux','Mystères joyeux','Mystères lumineux','Mystères douloureux'];
+const TITLES=['Novice','Fidèle assidu','Serviteur de Dieu','Témoin de la Foi','Pèlerin de lumière','Apôtre du Rosaire','Saint des temps'];
+
+// 7 contributeurs, un par jour de la semaine (0=dim, 1=lun, …, 6=sam)
+const CONTRIBUTORS = {
+  0: { name: 'Père Thomas',   dow: 0 },
+  1: { name: 'Père Martin',   dow: 1 },
+  2: { name: 'Père François', dow: 2 },
+  3: { name: 'Père Pierre',   dow: 3 },
+  4: { name: 'Père Jean',     dow: 4 },
+  5: { name: 'Père Bernard',  dow: 5 },
+  6: { name: 'Père André',    dow: 6 },
+};
+
+const READINGS=[
+  {
+    ref:'Is 40, 1-11 · Mt 3, 1-12',
+    epitre:'Dominica I Adventus · Introït, Épître, Évangile',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït</h3>
+<p><em>Ad te levavi animam meam… — Vers vous, Seigneur, j'élève mon âme ; mon Dieu, en vous je me confie. Que je ne sois pas confondu, que mes ennemis ne triomphent pas de moi.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · Is 40, 1-11</h3>
+<p>En ces jours-là, le prophète Isaïe reçut la parole du Seigneur : <em>« Consolez, consolez mon peuple, dit votre Dieu. Parlez au cœur de Jérusalem, criez-lui que sa servitude est accomplie, que sa faute est pardonnée. »</em></p>
+<p>Une voix crie dans le désert : <em>« Préparez le chemin du Seigneur, rendez droits ses sentiers. Toute vallée sera comblée, toute montagne et toute colline seront abaissées. »</em> La gloire du Seigneur sera révélée, et toute chair ensemble la verra.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel</h3>
+<p><em>Universi qui te expectant non confundentur, Domine — Tous ceux qui vous attendent ne seront point confondus, Seigneur ; que ceux qui cherchent le mal en vain soient couverts de honte.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Trait · Ps 24</h3>
+<p><em>Vias tuas, Domine, demonstra mihi — Montrez-moi vos voies, Seigneur, enseignez-moi vos sentiers. Dirigez-moi dans votre vérité, et instruisez-moi, car vous êtes le Dieu de mon salut.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Mt 3, 1-12</h3>
+<p>En ce temps-là, Jean-Baptiste parut, prêchant dans le désert de Judée : <em>« Repentez-vous, car le Royaume des cieux est proche. »</em></p>
+<p>C'est lui dont le prophète Isaïe avait parlé : <em>« Voix de celui qui crie dans le désert : Préparez le chemin du Seigneur, rendez droits ses sentiers. »</em></p>
+<p>Jean portait un vêtement de poils de chameau et une ceinture de cuir autour des reins. Il se nourrissait de sauterelles et de miel sauvage. Il disait : <em>« Celui qui vient après moi est plus puissant que moi ; je ne suis pas digne de porter ses sandales. Lui, il vous baptisera dans l'Esprit Saint et le feu. »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire</h3>
+<p><em>Ad te, Domine, levavi animam meam — Vers vous, Seigneur, j'élève mon âme ; mon Dieu, en vous je me confie.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
+<p><em>Dominus dabit benignitatem — Le Seigneur nous donnera sa bonté, et notre terre produira son fruit.</em></p>`,
+    homelie:`<p>La consolation est au cœur du message prophétique d'Isaïe. Dans un monde souvent marqué par l'épreuve et le silence de Dieu, cette parole retentit comme une promesse indestructible : <em>Dieu n'a pas oublié son peuple.</em></p><p>La voix qui crie dans le désert nous rappelle que toute préparation intérieure est une voie ouverte à la Grâce. Comme Jean-Baptiste qui préparait les cœurs, nous sommes invités chaque jour à aplanir les sentiers de notre vie, à redresser ce qui est tortueux en nous.</p><p>Ce texte nous enseigne que la consolation véritable ne vient pas du monde. Elle vient de Celui qui connaît chacun de nos noms, qui tient notre avenir dans ses mains, et qui dit aujourd'hui encore : <em>« Je suis là. »</em></p>`
+  },
+  {
+    ref:'Ps 22, 1-6 · Jn 10, 11-16',
+    epitre:'Dominica II · Introït, Épître, Évangile',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït</h3>
+<p><em>Populus Sion, ecce Dominus veniet — Peuple de Sion, voici que le Seigneur viendra pour sauver les nations ; et le Seigneur fera retentir la gloire de sa voix dans la joie de votre cœur.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · Ps 22, 1-6</h3>
+<p><em>« Le Seigneur est mon berger, je ne manquerai de rien. »</em></p>
+<p>Sur des prés d'herbe fraîche il me fait reposer. Il me mène vers les eaux tranquilles et restaure mes forces. Il me conduit par le juste chemin pour l'honneur de son nom.</p>
+<p>Si je traverse les ravins de la mort, je ne crains aucun mal, car tu es avec moi : ton bâton me guide et me rassure. Tu prépares la table pour moi devant mes ennemis ; tu répands le parfum sur ma tête, ma coupe est débordante.</p>
+<p>Oui, le bonheur et la grâce m'accompagnent tous les jours de ma vie ; j'habiterai la maison du Seigneur pour la durée de mes jours.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel</h3>
+<p><em>Ex Sion species decoris ejus — De Sion resplendira sa beauté. Dieu viendra manifestement, et il ne gardera pas le silence.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Jn 10, 11-16</h3>
+<p>En ce temps-là, Jésus dit à ses disciples : <em>« Je suis le bon berger. Le bon berger donne sa vie pour ses brebis. Mais le mercenaire, qui n'est pas berger et à qui les brebis n'appartiennent pas, voit venir le loup, abandonne les brebis et s'enfuit. »</em></p>
+<p><em>« Je suis le bon berger : je connais mes brebis, et mes brebis me connaissent, comme le Père me connaît et que je connais le Père ; et je donne ma vie pour mes brebis. J'ai encore d'autres brebis, qui ne sont pas de cet enclos ; celles-là aussi, il faut que je les amène, et elles entendront ma voix, et il y aura un seul troupeau et un seul berger. »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire · Ps 84</h3>
+<p><em>Deus, tu conversus vivificabis nos — Dieu, vous nous avez convertis et vous nous avez vivifiés.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
+<p><em>Jerusalem surge — Jérusalem, lève-toi, monte sur la hauteur, et contemple la joie qui vient à toi de ton Dieu.</em></p>`,
+    homelie:`<p>Le psaume 22 est une méditation sur la confiance absolue en Dieu. Le berger qui guide ses brebis ne les abandonne pas dans les ravins. Dans nos traversées obscures, il suffit parfois de lever les yeux pour reconnaître la présence silencieuse du Créateur.</p><p>Ce psaume a été prié par des millions de croyants dans leurs heures les plus sombres. Il est la prière de celui qui n'a plus rien — et qui découvre que Dieu suffit.</p><p>Laissons ces mots résonner dans notre journée : <em>« Tu es avec moi. »</em> Pas devant, pas derrière, mais avec. C'est toute la promesse de l'Incarnation.</p>`
+  },
+  {
+    ref:'Mt 5, 1-12 · Lc 2, 42-52',
+    epitre:'Dominica III · Introït, Épître, Évangile',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït</h3>
+<p><em>Gaudete in Domino semper — Réjouissez-vous toujours dans le Seigneur ; encore une fois je vous dis, réjouissez-vous. Que votre modestie soit connue de tous les hommes : le Seigneur est proche.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · Ph 4, 4-7</h3>
+<p>Frères, réjouissez-vous toujours dans le Seigneur ; encore une fois je vous dis, réjouissez-vous. Que votre modestie soit connue de tous les hommes : le Seigneur est proche. Ne vous inquiétez de rien ; mais, en toute chose, faites connaître vos besoins à Dieu par des prières et des supplications, avec action de grâces.</p>
+<p>Et la paix de Dieu, qui surpasse tout entendement, gardera vos cœurs et vos esprits en Jésus-Christ Notre-Seigneur.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel · Ps 79</h3>
+<p><em>Qui sedes, Domine, super Cherubim, excita potentiam tuam et veni — Vous qui êtes assis sur les Chérubins, manifestez votre puissance et venez.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Trait · Is 45</h3>
+<p><em>Rorate, caeli, desuper — Cieux, répandez votre rosée d'en haut, et que les nuées fassent pleuvoir le Juste. Que la terre s'ouvre et produise le Sauveur.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Jn 1, 19-28</h3>
+<p>En ce temps-là, les Juifs envoyèrent de Jérusalem des prêtres et des lévites pour demander à Jean : <em>« Qui êtes-vous ? »</em> Il confessa et ne nia point ; et il confessa : <em>« Je ne suis pas le Christ. »</em></p>
+<p>Ils lui demandèrent : <em>« Qu'êtes-vous donc ? Êtes-vous Élie ? »</em> Il dit : <em>« Je ne le suis pas. »</em> — <em>« Êtes-vous le prophète ? »</em> Il répondit : <em>« Non. »</em></p>
+<p>Il dit : <em>« Je suis la voix de celui qui crie dans le désert : Rendez droit le chemin du Seigneur, comme a dit le prophète Isaïe. »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire · Ps 84</h3>
+<p><em>Benedixisti, Domine, terram tuam — Vous avez béni votre terre, Seigneur ; vous avez ramené les captifs de Jacob.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion · Is 35</h3>
+<p><em>Dicite: pusillanimes, confortamini — Dites aux pusillanimes : Courage, ne craignez pas ; voici votre Dieu qui vient et vous sauvera.</em></p>`,
+    homelie:`<p>La liturgie de ce dimanche de <em>Gaudete</em> — Réjouissez-vous — nous invite à une joie qui ne dépend pas des circonstances. Saint Paul écrit depuis la prison ; pourtant, il chante la joie.</p><p>Cette joie chrétienne n'est pas l'optimisme facile qui ignore la souffrance. C'est une joie ancrée dans la certitude que Dieu agit, même dans l'obscurité. <em>« Le Seigneur est proche »</em> — voilà le fondement de tout.</p><p>Aujourd'hui, demandons la grâce de cette joie intérieure que le monde ne peut ni donner ni enlever.</p>`
+  },
+  {
+    ref:'Jn 1, 1-14 · Lc 2, 1-14',
+    epitre:'Nativité du Seigneur · Messe de minuit',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït</h3>
+<p><em>Dominus dixit ad me: Filius meus es tu — Le Seigneur m'a dit : Tu es mon Fils, je t'ai engendré aujourd'hui.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · Tt 2, 11-15</h3>
+<p>Bien-aimé, la grâce de Dieu notre Sauveur s'est manifestée à tous les hommes, nous enseignant à renoncer à l'impiété et aux convoitises mondaines, et à vivre dans ce siècle sobrement, justement et pieusement, attendant la bienheureuse espérance et l'avènement glorieux du grand Dieu et notre Sauveur Jésus-Christ.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel · Ps 109</h3>
+<p><em>Tecum principium in die virtutis tuae — En vous est la principauté au jour de votre puissance, dans les splendeurs des saints.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Lc 2, 1-14</h3>
+<p>En ce temps-là, un édit de César Auguste ordonna le recensement de tout l'univers. Or il advint que, comme ils étaient là, les jours où elle devait enfanter furent accomplis. Et elle enfanta son fils premier-né, et elle l'emmaillota, et elle le coucha dans une crèche, parce qu'il n'y avait pas de place pour eux dans l'hôtellerie.</p>
+<p>Il y avait dans cette région des bergers qui veillaient et gardaient leur troupeau pendant les veilles de la nuit. Et voici qu'un ange du Seigneur se présenta à eux, et la gloire du Seigneur les environna de sa lumière, et ils furent saisis d'une grande frayeur.</p>
+<p>L'ange leur dit : <em>« Ne craignez point ; car je vous annonce une grande joie, qui sera pour tout le peuple : il vous est né aujourd'hui un Sauveur, qui est le Christ Seigneur, dans la ville de David. »</em></p>
+<p>Et tout à coup il se joignit à l'ange une multitude de l'armée céleste, louant Dieu et disant : <em>« Gloire à Dieu au plus haut des cieux, et paix sur la terre aux hommes de bonne volonté ! »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire · Ps 95</h3>
+<p><em>Laetentur caeli et exsultet terra — Que les cieux se réjouissent et que la terre tressaille devant la face du Seigneur, car il est venu.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion · Ps 109</h3>
+<p><em>In splendoribus sanctorum — Dans les splendeurs des saints, je t'ai engendré avant l'étoile du matin.</em></p>`,
+    homelie:`<p>Le prologue de Jean nous plonge dans l'abîme de l'éternité. Avant toute chose, avant toute création, il y avait le Verbe. Et ce Verbe — qui est Dieu — a choisi de se faire chair, de prendre notre condition.</p><p>C'est le mystère le plus vertigineux de la foi chrétienne : l'infini se fait fini pour que le fini puisse toucher l'infini. La lumière entre dans les ténèbres non pas pour les condamner, mais pour les illuminer de l'intérieur.</p><p>Méditons sur cette phrase : <em>« Il a habité parmi nous. »</em> Dieu n'est pas lointain. Il est parmi nous — dans notre prière, dans nos frères, dans notre journée ordinaire.</p>`
+  },
+  {
+    ref:'Lc 15, 11-32 · Mc 10, 13-16',
+    epitre:'Dominica IV · Introït, Épître, Évangile',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït</h3>
+<p><em>Rorate, caeli, desuper — Cieux, répandez votre rosée d'en haut, et que les nuées fassent pleuvoir le Juste. Que la terre s'ouvre et produise le Sauveur.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · 1 Co 4, 1-5</h3>
+<p>Frères, que les hommes nous regardent comme les ministres du Christ et les dispensateurs des mystères de Dieu. Or, ce qu'on demande des dispensateurs, c'est que chacun soit trouvé fidèle.</p>
+<p>Pour moi, il m'importe fort peu d'être jugé par vous, ou par un tribunal humain ; je ne me juge pas moi-même non plus. Car je n'ai rien sur la conscience ; mais ce n'est pas pour cela que je suis justifié : c'est le Seigneur qui me juge.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel · Ps 144</h3>
+<p><em>Prope est Dominus omnibus invocantibus eum — Le Seigneur est proche de tous ceux qui l'invoquent, de tous ceux qui l'invoquent en vérité.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Lc 3, 1-6</h3>
+<p>En la quinzième année du règne de Tibère César, la parole de Dieu fut adressée à Jean, fils de Zacharie, dans le désert. Et il vint dans toute la région du Jourdain, prêchant le baptême de pénitence pour la rémission des péchés, comme il est écrit dans le livre des paroles du prophète Isaïe :</p>
+<p><em>« Voix de celui qui crie dans le désert : Préparez le chemin du Seigneur, rendez droits ses sentiers. Toute vallée sera comblée, et toute montagne et toute colline sera abaissée. »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire · Lc 1</h3>
+<p><em>Ave Maria, gratia plena — Je vous salue Marie, pleine de grâce, le Seigneur est avec vous ; vous êtes bénie entre les femmes, et Jésus, le fruit de vos entrailles, est béni.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion · Is 7</h3>
+<p><em>Ecce Virgo concipiet et pariet filium — Voici que la Vierge concevra et enfantera un fils, et on l'appellera Emmanuel.</em></p>`,
+    homelie:`<p>La parabole du fils prodigue est avant tout la parabole du Père miséricordieux. Le fils part, dilapide tout, touche le fond. Et à ce moment précis — <em>« il revint à lui-même »</em>, dit l'Évangile — il décide de rentrer.</p><p>Ce retour à soi-même, c'est le début de toute conversion. Non pas une longue démarche, mais un retournement du regard. Et le père, qui guettait sans doute depuis longtemps, court à sa rencontre.</p><p>C'est le visage de Dieu que Jésus nous révèle ici : un Père qui court. Qui ne pèse pas les fautes. Quelle que soit la distance que nous avons mise entre nous et Lui, ce Père est debout à l'horizon de notre vie.</p>`
+  },
+  {
+    ref:'Rm 8, 28-39 · Mc 1, 1-8',
+    epitre:'Férie · Épître et Évangile du jour',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït · Ps 24</h3>
+<p><em>Ad te levavi animam meam — Vers vous, Seigneur, j'élève mon âme.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · Rm 8, 28-39</h3>
+<p>Frères, nous le savons, tout contribue au bien de ceux qui aiment Dieu, ceux qu'il a appelés conformément à son dessein. Si Dieu est pour nous, qui sera contre nous ? Lui qui n'a pas épargné son propre Fils, mais l'a livré pour nous tous, comment ne nous donnerait-il pas tout, avec lui ?</p>
+<p>Qui pourra nous séparer de l'amour du Christ ? La détresse ? L'angoisse ? La persécution ? Ni la mort ni la vie, ni les anges ni les principautés, ni le présent ni l'avenir, ni les puissances — rien ne pourra nous séparer de l'amour de Dieu qui est en Jésus-Christ notre Seigneur.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel · Ps 24</h3>
+<p><em>Universi qui te expectant — Tous ceux qui vous attendent ne seront point confondus, Seigneur.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Mc 1, 1-8</h3>
+<p>Commencement de l'Évangile de Jésus-Christ, Fils de Dieu. Comme il est écrit dans le prophète Isaïe : <em>« Voici que j'envoie mon messager devant ta face, celui qui préparera ta route. Voix de celui qui crie dans le désert : Préparez le chemin du Seigneur, rendez droits ses sentiers. »</em></p>
+<p>Jean parut dans le désert, baptisant et prêchant le baptême de pénitence pour la rémission des péchés. Et il prêchait, disant : <em>« Il vient après moi, celui qui est plus puissant que moi, et je ne suis pas digne de me baisser pour délier la courroie de ses sandales. Moi, je vous ai baptisés d'eau ; lui, il vous baptisera du Saint-Esprit. »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire</h3>
+<p><em>Ad te, Domine, levavi — Vers vous, Seigneur, j'élève mon âme.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion</h3>
+<p><em>Dominus dabit benignitatem — Le Seigneur nous donnera sa bonté, et notre terre produira son fruit.</em></p>`,
+    homelie:`<p>Saint Paul chante la certitude de l'amour de Dieu avec une ardeur incomparable. Cette liste — mort, vie, anges, principautés, présent, avenir — dit que toutes les puissances du cosmos sont impuissantes à briser ce lien.</p><p>Notre foi n'est pas un pari risqué sur un Dieu incertain. Elle s'appuie sur une promesse que la Résurrection a scellée une fois pour toutes.</p><p>Dans les épreuves de ce jour, rappelons-nous cette certitude : <em>« Tout contribue au bien de ceux qui aiment Dieu. »</em> Non pas que tout soit bon, mais que Dieu sait tout transformer en chemin vers Lui.</p>`
+  },
+  {
+    ref:'Ap 21, 1-7 · Jn 21, 1-14',
+    epitre:'Férie · Épître et Évangile du jour',
+    text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">✝ Introït · Ps 65</h3>
+<p><em>Jubilate Deo omnis terra — Acclamez Dieu, vous toutes les terres, chantez la gloire de son nom, rendez-lui une gloire éclatante.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Épître · Ap 21, 1-7</h3>
+<p>Moi, Jean, je vis un ciel nouveau et une terre nouvelle — le premier ciel et la première terre s'en étaient allés, et il n'y avait plus de mer.</p>
+<p>Et j'entendis une voix forte venant du trône : <em>« Voici la demeure de Dieu avec les hommes. Il demeurera avec eux, et ils seront ses peuples, et lui, Dieu-avec-eux, sera leur Dieu. Il essuiera toute larme de leurs yeux, la mort ne sera plus, et il n'y aura plus ni deuil, ni cri, ni souffrance — car ce qui était ancien a disparu. »</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Graduel · Ps 117</h3>
+<p><em>Haec dies quam fecit Dominus — Voici le jour que le Seigneur a fait : exultons et réjouissons-nous en lui.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Évangile · Jn 21, 1-14</h3>
+<p>En ce temps-là, Jésus se manifesta de nouveau à ses disciples, au bord de la mer de Tibériade. Pierre leur dit : <em>« Je vais pêcher. »</em> Ils lui dirent : <em>« Nous allons aussi avec toi. »</em> Ils sortirent et montèrent dans la barque ; et cette nuit-là ils ne prirent rien.</p>
+<p>Comme le matin commençait à paraître, Jésus se tint sur le rivage ; mais les disciples ne savaient pas que c'était Jésus. Jésus leur dit : <em>« Enfants, avez-vous quelque chose à manger ? »</em> Ils lui répondirent : <em>« Non. »</em> Il leur dit : <em>« Jetez le filet du côté droit de la barque, et vous en trouverez. »</em> Ils le jetèrent donc, et ils ne pouvaient plus le tirer, à cause de la multitude des poissons.</p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Offertoire · Ps 75</h3>
+<p><em>Illustris es, Domine — Vous êtes illustre, Seigneur, et magnifique sur les montagnes éternelles.</em></p>
+<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">✝ Communion · Jn 21</h3>
+<p><em>Simon Joannis, diligis me plus his ? — Simon, fils de Jean, m'aimes-tu plus que ceux-ci ? Seigneur, vous savez toutes choses : vous savez que je vous aime.</em></p>`,
+    homelie:`<p>L'Apocalypse n'est pas un livre de terreur mais d'espérance. Jean, exilé sur l'île de Patmos, écrit pour des chrétiens persécutés. Il leur offre une vision : la fin de l'histoire, telle que Dieu la voit.</p><p>Et cette fin est une tendresse. <em>« Il essuiera toute larme de leurs yeux. »</em> Ce geste simple — Dieu qui essuie nos larmes — dit tout.</p><p>Portons cette image dans notre prière aujourd'hui. Dans nos peines, nos fatigues, nos deuils — Il est là, et un jour Il essuiera tout. Cette espérance n'est pas une fuite : c'est la force qui nous permet d'agir et d'aimer maintenant.</p>`
+  },
+];
+
+
+const AVE_OPTIONS=[{v:1,l:'1×'},{v:3,l:'3×'},{v:5,l:'5×'},{v:10,l:'10×'}];
+const CHAP_STEPS=[10,20,30,40,50];
+const ROS_STEPS=[{v:50,l:'1×'},{v:100,l:'2×'},{v:150,l:'3×'}];
+const PTS={lecture:15,homelie:20,avePerAve:1,chapPerAve:2,chapBonus:40,rosBonus:120,dayEmpty:-50,dayPartial:-10};
+
+let G={
+  score:0,xp:0,level:1,streak:3,
+  totalAves:147,totalChapelets:6,totalRosaries:1,perfectDays:8,
+  chapeletCount:20,rosaryCount:0,
+  profile:{prenom:'',nom:'',email:'',mdp:'',role:''},
+  days:{},
+  homélies:{} // key=dateStr, value=text
+};
+
+// Demo: logged in as contributeur (jour=lundi=1)
+G.profile.role='contributeur';
+G.profile.dow=1; // ce prêtre = lundi
+G.profile.prenom='Père Martin';
+
+const today=new Date();
+function dk(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function rd(d){const s=d.getDate()+d.getMonth()*3;return READINGS[s%READINGS.length];}
+
+/* ── NAVIGATION ── */
+let prevPage='prieres';
+function goPage(name){
+  prevPage=document.querySelector('.page.active').id.replace('page-','');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  ['compte','soutenir'].forEach(n=>{
+    const el=document.getElementById('icon-'+n);
+    if(el)el.classList.toggle('active-page',n===name);
+  });
+  const back=document.getElementById('hdr-back');
+  const titles={prieres:'✝ Ora et Labora',compte:'Mon compte',soutenir:'Soutenir',contributeur:'Espace contributeur'};
+  document.getElementById('hdr-title-txt').textContent=titles[name]||'✝ Ora et Labora';
+  document.getElementById('hdr-date').style.display=name==='prieres'?'block':'none';
+  back.classList.toggle('visible',name!=='prieres');
+  if(name==='compte')renderCompte();
+  if(name==='contributeur')renderContributeur();
+  window.scrollTo(0,0);
+}
+function goBack(){goPage(prevPage==='prieres'?'compte':prevPage);prevPage='prieres';}
+
+/* ── SCORE ── */
+function addScore(pts,msg){
+  G.score=Math.max(0,G.score+pts);
+  if(pts>0){G.xp+=pts;const max=G.level*100;if(G.xp>=max){G.xp-=max;G.level=Math.min(G.level+1,7);}}
+  document.getElementById('hdr-score').textContent=G.score;
+  if(msg)showToast(msg);
+}
+
+/* ── STATE HELPERS ── */
+function chapState(){return G.chapeletCount>=50?'done':G.chapeletCount>0?'prog':'none';}
+function rosState(){return G.rosaryCount>=150?'done':G.rosaryCount>0?'prog':'none';}
+function dotClass(s){if(s===true||s==='done')return ' done';if(s==='prog')return ' prog';return '';}
+
+/* ── FEED ── */
+function buildFeed(){
+  const feed=document.getElementById('feed');feed.innerHTML='';
+  const d0=new Date(today);d0.setDate(d0.getDate()-3);
+  for(let i=0;i<10;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
+  document.getElementById('hdr-date').textContent=DAYS[today.getDay()]+' '+today.getDate()+' '+MONTHS_LONG[today.getMonth()];
+  setTimeout(()=>{const el=document.getElementById('card-'+dk(today));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},200);
+}
+
+function buildCard(d){
+  const key=dk(d);if(!G.days[key])G.days[key]={};
+  const ds=G.days[key];const r=rd(d);const isToday=key===dk(today);const dow=d.getDay();
+  const fkey=d.getDate()+''+(d.getMonth()+1);
+  const feast=FEASTS[fkey]||MYSTERY_TYPES[dow]||'';
+  const chapS=chapState();const rosS=rosState();
+  const states=[ds.lectures,ds.homelie,ds.ave,chapS,rosS];
+  const allDone=states.every(s=>s===true||s==='done');
+  const wrap=document.createElement('div');
+  wrap.className='day-card'+(isToday?' today':'')+(allDone?' complete':'');
+  wrap.id='card-'+key;
+  if(!isToday)wrap.classList.add('collapsed');
+  const dots=states.map(s=>`<div class="dot${dotClass(s)}"></div>`).join('');
+  const hasHomelie=!!G.homélies[key];
+  wrap.innerHTML=`
+<div class="day-hdr" onclick="toggleCard('${key}')">
+  <div class="day-hdr-left">
+    <div class="day-num-badge"><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>
+    <div><div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}</div><div class="dfeast">${feast}</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="day-progress-dots">${dots}</div>
+    <span class="chev" id="chev-${key}">›</span>
+  </div>
+</div>
+<div class="day-preview">${r.ref} — ${r.epitre}</div>
+<div class="day-body">
+  <div class="section${ds.lectures?' done-section':''}" id="sec-lec-${key}">
+    <div class="section-row">
+      <span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M9 13 Q9 11 11 11 L29 11 L29 49 L11 49 Q9 49 9 47 Z" fill="#e8e8e4" stroke="#b8b8b0" stroke-width="1.5"/><path d="M51 13 Q51 11 49 11 L31 11 L31 49 L49 49 Q51 49 51 47 Z" fill="#f4f4f0" stroke="#b8b8b0" stroke-width="1.5"/><rect x="28" y="10" width="4" height="40" rx="2" fill="#2a2a26"/><line x1="13" y1="20" x2="26" y2="20" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="27" x2="26" y2="27" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="34" x2="26" y2="34" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="41" x2="22" y2="41" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><rect x="37" y="17" width="3" height="14" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="32" y="21" width="13" height="3" rx="1" fill="#2a2a26" opacity="0.4"/><line x1="34" y1="37" x2="47" y2="37" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="34" y1="44" x2="43" y2="44" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><path d="M21 49 L21 58 L25 54 L29 58 L29 49" fill="#b52a1a"/></svg>Lectures du jour</span>
+      <button class="pill${ds.lectures?' green':' red'}" id="btn-lec-${key}" onclick="openReader('${key}','lecture')" style="pointer-events:all;cursor:pointer;">
+        ${ds.lectures?'Lu ✓':'Lire'}
+      </button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;">${r.epitre}</div>
+  </div>
+  <div class="section${ds.homelie?' done-section':''}" id="sec-hom-${key}">
+    <div class="section-row">
+      <span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M15 60 L15 37 Q15 31 21 30 L39 30 Q45 31 45 37 L45 60 Z" fill="#1a1a18"/><rect x="24" y="28" width="12" height="5" rx="1.5" fill="white"/><rect x="28" y="28" width="4" height="5" rx="0.5" fill="#1a1a18"/><ellipse cx="30" cy="18" rx="10" ry="11" fill="#d4a882"/><path d="M20 15 Q20 7 30 7 Q40 7 40 15" fill="#2a1a0a"/><circle cx="30" cy="40" r="1.2" fill="#2a2a26" opacity="0.35"/><circle cx="30" cy="48" r="1.2" fill="#2a2a26" opacity="0.35"/></svg>Homélie</span>
+      <button class="pill${ds.homelie?' green':' red'}" id="btn-hom-${key}" onclick="openReader('${key}','homelie')" style="pointer-events:all;cursor:pointer;">
+        ${ds.homelie?'Médité ✓':'Méditer'}
+      </button>
+    </div>
+    ${!hasHomelie?`<div style="font-size:10px;color:var(--orange-text);margin-top:4px;">⏳ Homélie à paraître</div>`:''}
+  </div>
+  ${secAve(key,ds)}${secChapelet(key,dow)}${secRosaire(key)}
+</div>`;
+  return wrap;
+}
+
+function secAve(key,ds){
+  const sel=G.days[key]._aveSel||0;const hasSel=sel>0;
+  const pills=AVE_OPTIONS.map(o=>`<button class="sub-pill${sel===o.v?' selected':''}" onclick="selAve('${key}',${o.v})">${o.l}</button>`).join('');
+  const btn=ds.ave?`<span class="pill green">Prié ✓</span>`:`<button class="pill${hasSel?' green':' red'}" id="btn-ave-${key}" onclick="doAve('${key}')">Prier${hasSel?' ✓':''}</button>`;
+  return `<div class="section${ds.ave?' done-section':''}" id="sec-ave-${key}">
+  <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><line x1="30" y1="6" x2="30" y2="1" stroke="#d4a820" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/><line x1="38" y1="8" x2="41" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><line x1="22" y1="8" x2="19" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><circle cx="30" cy="15" r="9" fill="none" stroke="#d4a820" stroke-width="1.5" opacity="0.8"/><circle cx="30" cy="6.5" r="1.4" fill="#d4a820"/><circle cx="36.5" cy="8.5" r="1.1" fill="#d4a820"/><circle cx="23.5" cy="8.5" r="1.1" fill="#d4a820"/><ellipse cx="30" cy="15" rx="7" ry="7.5" fill="#f0d4b0"/><path d="M19 18 Q19 13 24 12 L30 11 L36 12 Q41 13 41 18 L41 23 Q36 21 30 21 Q24 21 19 23 Z" fill="#2a5a9a"/><path d="M13 60 L13 34 Q13 25 21 23 L30 21 L39 23 Q47 25 47 34 L47 60 Z" fill="#2a5a9a"/><path d="M21 60 L21 38 Q21 30 30 28 Q39 30 39 38 L39 60 Z" fill="#f0f0ea"/><path d="M25 40 Q25 37 30 36 Q35 37 35 40 L35 45 Q30 46 25 45 Z" fill="#f0d4b0"/><line x1="23" y1="44" x2="15" y2="54" stroke="#d4a820" stroke-width="1.2" opacity="0.5" stroke-linecap="round"/><line x1="37" y1="44" x2="45" y2="54" stroke="#d4a820" stroke-width="1.2" opacity="0.5" stroke-linecap="round"/></svg>Je vous salue Marie</span>${btn}</div>
+  ${!ds.ave?`<div class="sub-pills">${pills}</div>`:''}
+</div>`;}
+
+function secChapelet(key,dow){
+  const count=G.chapeletCount;const isDone=count>=50;const inProg=count>0&&count<50;
+  const pct=Math.min(100,Math.round(count/50*100));
+  const stepPills=CHAP_STEPS.map(v=>`<button class="sub-pill${count>=v?' used':''}" onclick="addChapelet(${v},'${key}')">${v}×</button>`).join('');
+  const pillBtn=isDone?`<span class="pill green">Complété ✓</span>`:inProg?`<span class="pill orange">En cours…</span>`:`<span class="pill red">Commencer</span>`;
+  return `<div class="section" id="sec-chap-${key}">
+  <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><circle cx="30" cy="27" r="17" fill="none" stroke="#b8b8b0" stroke-width="1.3" stroke-dasharray="2.8 3.2"/><circle cx="30" cy="10" r="3.2" fill="#2a2a26"/><circle cx="44" cy="18" r="3.2" fill="#2a2a26"/><circle cx="44" cy="35" r="3.2" fill="#2a2a26"/><circle cx="30" cy="44" r="3.2" fill="#2a2a26"/><circle cx="16" cy="35" r="3.2" fill="#2a2a26"/><circle cx="16" cy="18" r="3.2" fill="#2a2a26"/><circle cx="37.5" cy="12" r="2" fill="#565650"/><circle cx="41.5" cy="15" r="2" fill="#565650"/><circle cx="45" cy="27" r="2" fill="#565650"/><circle cx="45" cy="31" r="2" fill="#565650"/><circle cx="37.5" cy="42" r="2" fill="#565650"/><circle cx="22.5" cy="42" r="2" fill="#565650"/><circle cx="15" cy="31" r="2" fill="#565650"/><circle cx="15" cy="27" r="2" fill="#565650"/><circle cx="22.5" cy="12" r="2" fill="#565650"/><circle cx="18.5" cy="15" r="2" fill="#565650"/><line x1="30" y1="47" x2="30" y2="52" stroke="#b8b8b0" stroke-width="1.8"/><circle cx="30" cy="50" r="1.8" fill="#565650"/><rect x="28.2" y="52" width="3.6" height="8" rx="1.2" fill="#2a2a26"/><rect x="25" y="55" width="10" height="3" rx="1.2" fill="#2a2a26"/></svg>Chapelet</span>${pillBtn}</div>
+  <div style="font-size:10px;color:var(--muted);margin-top:3px;">${MYSTERY_TYPES[dow]}</div>
+  ${!isDone?`<div class="sub-pills">${stepPills}</div><div class="chap-progress">${count}/50 Ave Maria<div class="chap-bar-track"><div class="chap-bar-fill" style="width:${pct}%"></div></div></div>`
+  :`<div class="chap-progress" style="color:var(--done-text);">50/50 — Chapelet accompli 🙏</div>`}
+</div>`;}
+
+function secRosaire(key){
+  const count=G.rosaryCount;const isDone=count>=150;const inProg=count>0&&count<150;
+  const pct=Math.min(100,Math.round(count/150*100));
+  const stepPills=ROS_STEPS.map(o=>`<button class="sub-pill${count>=o.v?' used':''}" onclick="addRosaire(${o.v},'${key}')">${o.l}</button>`).join('');
+  const pillBtn=isDone?`<span class="pill green">Accompli ✓</span>`:inProg?`<span class="pill orange">En cours…</span>`:`<span class="pill red">Commencer</span>`;
+  return `<div class="section" id="sec-ros-${key}">
+  <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M11 42 L11 30 L20 37 L30 19 L40 37 L49 30 L49 42 Z" fill="#2a2a26"/><rect x="11" y="40" width="38" height="8" rx="2.5" fill="#2a2a26"/><rect x="11" y="40" width="38" height="3.5" rx="1.5" fill="#d4a820"/><circle cx="30" cy="41.5" r="3" fill="#8b1a1a"/><circle cx="20" cy="41.5" r="2" fill="#d4a820"/><circle cx="40" cy="41.5" r="2" fill="#d4a820"/><circle cx="30" cy="19" r="3" fill="#d4a820"/><circle cx="20" cy="37" r="2.4" fill="#d4a820"/><circle cx="40" cy="37" r="2.4" fill="#d4a820"/><circle cx="11" cy="30" r="2.2" fill="#d4a820"/><circle cx="49" cy="30" r="2.2" fill="#d4a820"/><rect x="28.8" y="11" width="2.4" height="7" rx="1" fill="#d4a820"/><rect x="26" y="13.5" width="8" height="2.4" rx="1" fill="#d4a820"/></svg>Rosaire</span>${pillBtn}</div>
+  <div style="font-size:10px;color:var(--muted);margin-top:3px;">3 chapelets · 150 Ave Maria</div>
+  ${!isDone?`<div class="sub-pills">${stepPills}</div><div class="chap-progress">${count}/150 Ave Maria<div class="chap-bar-track"><div class="chap-bar-fill" style="width:${pct}%"></div></div></div>`
+  :`<div class="chap-progress" style="color:var(--done-text);">150/150 — Rosaire accompli 🌹</div>`}
+</div>`;}
+
+/* ── CARD UTILS ── */
+function toggleCard(key){
+  const card=document.getElementById('card-'+key);
+  const chev=document.getElementById('chev-'+key);
+  card.classList.toggle('collapsed');
+  chev.style.transform=card.classList.contains('collapsed')?'rotate(0)':'rotate(90deg)';
+}
+function refreshCard(key){
+  const old=document.getElementById('card-'+key);
+  const [y,m,day]=key.split('-').map(Number);
+  const newCard=buildCard(new Date(y,m-1,day));
+  const wasOpen=!old.classList.contains('collapsed');
+  if(wasOpen)newCard.classList.remove('collapsed');
+  old.replaceWith(newCard);
+  if(wasOpen)document.getElementById('chev-'+key).style.transform='rotate(90deg)';
+}
+function refreshAllCards(){
+  document.querySelectorAll('.day-card').forEach(card=>{
+    const key=card.id.replace('card-','');
+    const [y,m,day]=key.split('-').map(Number);
+    const newCard=buildCard(new Date(y,m-1,day));
+    const wasOpen=!card.classList.contains('collapsed');
+    if(wasOpen)newCard.classList.remove('collapsed');
+    card.replaceWith(newCard);
+    if(wasOpen)document.getElementById('chev-'+key).style.transform='rotate(90deg)';
+  });
+}
+
+/* ── READER ── */
+let readerKey='',readerType='';
+function openReader(key,type){
+  const [y,m,day]=key.split('-').map(Number);
+  const d=new Date(y,m-1,day);
+  const r=rd(d);
+  readerKey=key;readerType=type;
+  const isLecture=type==='lecture';
+  document.getElementById('reader-label').textContent=isLecture?'Lectures du jour':'Homélie';
+  document.getElementById('reader-date').textContent=DAYS[d.getDay()]+' '+day+' '+MONTHS_LONG[d.getMonth()];
+  document.getElementById('reader-ref').textContent=r.epitre;
+  document.getElementById('reader-text').innerHTML=isLecture?r.text:(G.homélies[key]||r.homelie.replace(/\n/g,'</p><p>'));
+  const ds=G.days[key]||{};
+  const isDone=isLecture?ds.lectures:ds.homelie;
+  const btn=document.getElementById('reader-done-btn');
+  btn.textContent=isDone?'✓ Déjà marqué comme lu':'J\'ai '+(isLecture?'lu':'médité')+' — marquer comme fait ✓';
+  btn.className='cta-btn'+(isDone?' done':'');
+  document.getElementById('reader').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeReader(){
+  document.getElementById('reader').classList.remove('open');
+  document.body.style.overflow='';
+}
+function markReaderDone(){
+  const ds=G.days[readerKey]||(G.days[readerKey]={});
+  const isLecture=readerType==='lecture';
+  if(isLecture&&!ds.lectures){ds.lectures=true;addScore(PTS.lecture,'Lecture lue +'+PTS.lecture+' pts');}
+  else if(!isLecture&&!ds.homelie){ds.homelie=true;addScore(PTS.homelie,'Homélie méditée +'+PTS.homelie+' pts');}
+  const btn=document.getElementById('reader-done-btn');
+  btn.textContent='✓ Marqué comme fait';btn.className='cta-btn done';
+  refreshCard(readerKey);
+  setTimeout(closeReader,700);
+}
+
+/* ── ACTIONS ── */
+function selAve(key,v){
+  G.days[key]._aveSel=v;
+  const sec=document.getElementById('sec-ave-'+key);
+  if(sec)sec.querySelectorAll('.sub-pill').forEach((b,i)=>{b.classList.toggle('selected',AVE_OPTIONS[i].v===v);});
+  const btn=document.getElementById('btn-ave-'+key);
+  if(btn){btn.classList.remove('red');btn.classList.add('green','flipping');btn.textContent='Prier ✓';}
+}
+function doAve(key){
+  const ds=G.days[key];if(ds.ave)return;
+  const n=ds._aveSel||0;if(!n){showToast('Choisissez un nombre d\'Ave Maria');return;}
+  ds.ave=true;G.totalAves+=n;addScore(n*PTS.avePerAve,'Ave Maria +'+n+' pts');refreshCard(key);
+}
+function addChapelet(v,key){
+  if(G.chapeletCount>=50||G.chapeletCount>=v)return;
+  const added=v-G.chapeletCount;G.chapeletCount=v;G.totalAves+=added;
+  addScore(added*PTS.chapPerAve,'Chapelet +'+added*PTS.chapPerAve+' pts');
+  if(G.chapeletCount>=50){G.totalChapelets++;setTimeout(()=>{addScore(PTS.chapBonus,'🙏 Chapelet complet +'+PTS.chapBonus+' bonus');setTimeout(()=>{G.chapeletCount=0;refreshAllCards();},1500);},300);}
+  refreshAllCards();
+}
+function addRosaire(v,key){
+  if(G.rosaryCount>=150||G.rosaryCount>=v)return;
+  const added=v-G.rosaryCount;G.rosaryCount=v;G.totalAves+=added;
+  addScore(added*PTS.chapPerAve,'Rosaire +'+added*PTS.chapPerAve+' pts');
+  if(G.rosaryCount>=150){G.totalRosaries++;setTimeout(()=>{addScore(PTS.rosBonus,'🌹 Rosaire accompli +'+PTS.rosBonus+' bonus');setTimeout(()=>{G.rosaryCount=0;refreshAllCards();},1500);},300);}
+  refreshAllCards();
+}
+
+/* ── CONTRIBUTEUR ── */
+function renderContributeur(){
+  const dow=G.profile.dow; // jour de la semaine de ce prêtre
+  const list=document.getElementById('contrib-list');
+  list.innerHTML='';
+  document.getElementById('contrib-subtitle').textContent=
+    (G.profile.prenom||'Contributeur')+' · Homélies des '+['dimanches','lundis','mardis','mercredis','jeudis','vendredis','samedis'][dow]+' sur 30 jours';
+
+  // Générer les dates correspondant à ce dow sur les 30 prochains jours
+  const dates=[];
+  const d=new Date(today);
+  // rewind to find first occurrence
+  for(let i=0;i<37;i++){
+    const dd=new Date(today);dd.setDate(today.getDate()+i-3);
+    if(dd.getDay()===dow)dates.push(new Date(dd));
+  }
+  const shown=dates.slice(0,5);
+
+  shown.forEach(d=>{
+    const key=dk(d);
+    const r=rd(d);
+    const fkey=d.getDate()+''+(d.getMonth()+1);
+    const feast=FEASTS[fkey]||MYSTERY_TYPES[d.getDay()]||'';
+    const txt=G.homélies[key]||'';
+    const status=txt?'published':'empty';
+    const statusLabel=txt?'✓ Publié':'À rédiger';
+    const isPast=d<new Date(today.getFullYear(),today.getMonth(),today.getDate());
+
+    const div=document.createElement('div');
+    div.className='contrib-day';
+    div.innerHTML=`
+<div class="contrib-day-hdr">
+  <div>
+    <div class="contrib-day-label">${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}</div>
+    <div class="contrib-day-feast">${feast}</div>
+  </div>
+  <span class="status-pill ${status}">${statusLabel}</span>
+</div>
+<div class="ref-block">
+  <strong>${r.epitre}</strong><br>
+  <em style="font-size:10px;">${r.text.replace(/<[^>]+>/g,'').substring(0,120)}…</em>
+</div>
+<textarea class="homelie-input" id="ta-${key}" placeholder="Rédigez ou collez votre homélie ici…" rows="6">${txt}</textarea>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <button class="pub-btn${txt?' done':''}" id="pub-${key}" onclick="publishHomelie('${key}')">
+    ${txt?'✓ Publié':'Publier'}
+  </button>
+  <span style="font-size:10px;color:var(--muted);">Publication immédiate · visible par tous les fidèles</span>
+</div>`;
+    list.appendChild(div);
+  });
+}
+
+function publishHomelie(key){
+  const ta=document.getElementById('ta-'+key);
+  const txt=(ta.value||'').trim();
+  if(!txt){showToast('Veuillez saisir une homélie avant de publier');return;}
+  G.homélies[key]=txt;
+  const btn=document.getElementById('pub-'+key);
+  btn.textContent='✓ Publié';btn.classList.add('done');
+  showToast('🙏 Homélie publiée avec succès');
+  // update status pill
+  const pill=btn.closest('.contrib-day').querySelector('.status-pill');
+  if(pill){pill.className='status-pill published';pill.textContent='✓ Publié';}
+}
+
+/* ── MON COMPTE ── */
+function saveProfile(){
+  G.profile.prenom=document.getElementById('f-prenom').value;
+  G.profile.nom=document.getElementById('f-nom').value;
+  G.profile.email=document.getElementById('f-email').value;
+  G.profile.mdp=document.getElementById('f-mdp').value;
+}
+function renderCompte(){
+  const p=G.profile;
+  document.getElementById('c-name').textContent=(p.prenom||p.nom)?(p.prenom+' '+p.nom).trim():'—';
+  document.getElementById('c-title').textContent=TITLES[G.level-1]+' · Niveau '+G.level;
+  document.getElementById('c-score').textContent=G.score;
+  document.getElementById('f-prenom').value=p.prenom||'';
+  document.getElementById('f-nom').value=p.nom||'';
+  document.getElementById('f-email').value=p.email||'';
+  document.getElementById('f-mdp').value=p.mdp||'';
+  document.getElementById('c-stats').innerHTML=`
+    <div class="stat-tile"><div class="sv">${G.score}</div><div class="sl">Score</div></div>
+    <div class="stat-tile"><div class="sv">${G.streak}🔥</div><div class="sl">Série</div></div>
+    <div class="stat-tile"><div class="sv">${G.perfectDays}</div><div class="sl">Parfaits</div></div>
+    <div class="stat-tile"><div class="sv">${G.totalAves}</div><div class="sl">Ave Maria</div></div>
+    <div class="stat-tile"><div class="sv">${G.totalChapelets}</div><div class="sl">Chapelets</div></div>
+    <div class="stat-tile"><div class="sv">${G.totalRosaries}</div><div class="sl">Rosaires</div></div>`;
+  const BADGES=[
+    {l:'🌅 Première aurore',e:G.totalAves>0},{l:'🔥 7 jours',e:G.streak>=7},
+    {l:'📿 Chapelet d\'or',e:G.totalChapelets>=5},{l:'🌹 Rosaire d\'argent',e:G.totalRosaries>=1},
+    {l:'✨ 5 jours parfaits',e:G.perfectDays>=5},{l:'🕊 30 jours',e:G.streak>=30},
+  ];
+  document.getElementById('c-badges').innerHTML=BADGES.map(b=>`<span class="badge${b.e?' earned':''}">${b.l}</span>`).join('');
+  // Accès contributeur
+  document.getElementById('contrib-access').style.display=p.role==='contributeur'?'block':'none';
+}
+
+/* ── DON ── */
+let donAmt=5,donRec='once';
+function selDon(v,el){donAmt=v;document.getElementById('don-custom').value='';document.querySelectorAll('.don-amt').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');updateDonRecap();}
+function selDonCustom(el){donAmt=parseFloat(el.value)||0;document.querySelectorAll('.don-amt').forEach(b=>b.classList.remove('selected'));updateDonRecap();}
+function setRec(r){donRec=r;document.getElementById('rec-once').classList.toggle('active',r==='once');document.getElementById('rec-monthly').classList.toggle('active',r==='monthly');updateDonRecap();}
+function updateDonRecap(){document.getElementById('don-recap').textContent=donRec==='monthly'?`de ${donAmt} €/mois`:`de ${donAmt} €`;}
+
+/* ── TOAST ── */
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+
+// Init
+const todayKey=dk(today);
+G.days[todayKey]={lectures:true};
+buildFeed();
+document.getElementById('hdr-score').textContent=G.score;
+</script>
+</body>
+</html>
