@@ -189,6 +189,19 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 .tb-row{display:flex;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted);line-height:1.5;}
 .tb-row:last-child{margin-bottom:0;}
 
+.contrib-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.contrib-row:last-child{border-bottom:none;}
+.contrib-info .cn{font-size:13px;font-weight:600;color:var(--text);}
+.contrib-info .cd{font-size:11px;color:var(--muted);margin-top:2px;}
+.contrib-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--done-border);color:var(--done-text);background:var(--done-bg);}
+.del-btn{font-size:11px;color:var(--red-text);background:none;border:none;cursor:pointer;padding:4px 8px;}
+.homelie-admin-row{padding:10px 0;border-bottom:1px solid var(--border);}
+.homelie-admin-row:last-child{border-bottom:none;}
+.ha-date{font-size:12px;font-weight:600;color:var(--text);}
+.ha-author{font-size:10px;color:var(--muted);margin-top:1px;}
+.ha-preview{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;}
+.unpub-btn{font-size:10px;color:var(--red-text);background:none;border:1px solid var(--red-border);border-radius:999px;cursor:pointer;padding:3px 9px;margin-top:6px;}
+
 /* TOAST */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card);border:1.5px solid var(--accent);color:var(--accent);font-size:12px;font-weight:600;padding:9px 18px;border-radius:999px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
@@ -207,6 +220,7 @@ textarea.homelie-input:focus{border-color:var(--accent);}
   </div>
   <div class="hdr-right">
     <div class="score-chip"><span id="hdr-score">0</span><span class="sc-label">&nbsp;pts</span></div>
+    <div class="icon-btn" id="icon-home" onclick="goPage('prieres')" title="Prières" style="font-size:15px;font-weight:700;">✝</div>
     <div class="icon-btn" id="icon-compte" onclick="goPage('compte')" title="Mon compte"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="8" r="4" fill="#2a2a26"/><path d="M4 20 Q4 14 12 14 Q20 14 20 20" stroke="#2a2a26" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
     <div class="icon-btn" id="icon-soutenir" onclick="goPage('soutenir')" title="Soutenir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M12 21 C12 21 3 14 3 8 A4 4 0 0 1 11 7 L12 8 L13 7 A4 4 0 0 1 21 8 C21 14 12 21 12 21Z" fill="#b52a1a"/></svg></div>
   </div>
@@ -254,11 +268,25 @@ textarea.homelie-input:focus{border-color:var(--accent);}
         <b style="color:var(--red-text);">Pénalités :</b> Jour sans prière −50 · Jour incomplet −10
       </div>
     </div>
-    <!-- Accès contributeur — visible si role=contributeur -->
+    <!-- Code d'accès secret — visible par tous mais ne révèle rien -->
+    <div class="compte-section" id="secret-access">
+      <div class="compte-section-title">Code d'accès</div>
+      <div class="field-row">
+        <input class="field-input" id="secret-code" type="password" placeholder="Code confidentiel…">
+      </div>
+      <button class="cta-btn outline" onclick="checkSecretCode()" style="margin-top:6px;">Valider</button>
+    </div>
+    <!-- Espace contributeur — visible uniquement si role=contributeur -->
     <div class="compte-section" id="contrib-access" style="display:none;">
       <div class="compte-section-title">✝ Espace contributeur</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Rédigez les homélies pour vos jours assignés.</p>
       <button class="cta-btn outline" onclick="goPage('contributeur')">Accéder à mon espace →</button>
+    </div>
+    <!-- Espace admin — visible uniquement si role=admin -->
+    <div class="compte-section" id="admin-access" style="display:none;">
+      <div class="compte-section-title">⚙️ Administration</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Gérez les contributeurs et les homélies publiées.</p>
+      <button class="cta-btn" onclick="goPage('admin')">Accéder au panneau admin →</button>
     </div>
     <div style="height:8px;"></div>
   </div>
@@ -314,6 +342,35 @@ textarea.homelie-input:focus{border-color:var(--accent);}
   </div>
 </div>
 
+
+<!-- PAGE ADMIN -->
+<div class="page" id="page-admin">
+  <div class="compte-body" style="padding-top:14px;">
+    <div class="compte-section">
+      <div class="compte-section-title">⚙️ Contributeurs</div>
+      <div id="admin-contrib-list"></div>
+      <button class="cta-btn outline" style="margin-top:10px;" onclick="showAddContrib()">+ Ajouter un contributeur</button>
+    </div>
+    <div class="compte-section" id="add-contrib-form" style="display:none;">
+      <div class="compte-section-title">Nouveau contributeur</div>
+      <div class="field-row"><div class="field-label">Prénom & Nom</div><input class="field-input" id="new-contrib-name" placeholder="Père Martin"></div>
+      <div class="field-row"><div class="field-label">Email</div><input class="field-input" id="new-contrib-email" type="email" placeholder="pere.martin@diocese.fr"></div>
+      <div class="field-row"><div class="field-label">Jour assigné</div>
+        <select class="field-input" id="new-contrib-dow">
+          <option value="0">Dimanche</option><option value="1">Lundi</option><option value="2">Mardi</option>
+          <option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option>
+        </select>
+      </div>
+      <div class="field-row"><div class="field-label">Code d'accès contributeur</div><input class="field-input" id="new-contrib-code" placeholder="ex: PIERRE2026"></div>
+      <button class="cta-btn" onclick="addContrib()">Créer le compte</button>
+    </div>
+    <div class="compte-section">
+      <div class="compte-section-title">📖 Homélies publiées</div>
+      <div id="admin-homélies-list"></div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+</div>
 <!-- READER MODAL -->
 <div id="reader">
   <div id="reader-hdr">
@@ -966,6 +1023,128 @@ function undoRos(key){
   G.totalAves=Math.max(0,G.totalAves-removed);
   G.score=Math.max(0,G.score-removed*PTS.chapPerAve); document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards(); showToast('← Rosaire : étape annulée');
+}
+
+
+/* ── SECRET ACCESS ── */
+// Codes définis ici — à changer avant prod
+const ADMIN_CODE = 'ORA-ADMIN-2026';
+const CONTRIB_CODES = {
+  'PIERRE-LUNDI':   {name:'Père Pierre', dow:1},
+  'MARTIN-MARDI':   {name:'Père Martin', dow:2},
+  'THOMAS-MERCREDI':{name:'Père Thomas', dow:3},
+  'JEAN-JEUDI':     {name:'Père Jean', dow:4},
+  'ANDRE-VENDREDI': {name:'Père André', dow:5},
+  'BERNARD-SAMEDI': {name:'Père Bernard', dow:6},
+  'FRANCOIS-DIMANCHE':{name:'Père François', dow:0},
+};
+
+function checkSecretCode(){
+  const code = document.getElementById('secret-code').value.trim().toUpperCase();
+  if(code === ADMIN_CODE){
+    G.profile.role='admin';
+    document.getElementById('admin-access').style.display='block';
+    document.getElementById('contrib-access').style.display='none';
+    document.getElementById('secret-access').style.display='none';
+    showToast('⚙️ Mode admin activé');
+  } else if(CONTRIB_CODES[code]){
+    G.profile.role='contributeur';
+    G.profile.dow=CONTRIB_CODES[code].dow;
+    G.profile.prenom=CONTRIB_CODES[code].name;
+    document.getElementById('contrib-access').style.display='block';
+    document.getElementById('admin-access').style.display='none';
+    document.getElementById('secret-access').style.display='none';
+    showToast('✝ Accès contributeur activé');
+    renderCompte();
+  } else{
+    showToast('Code invalide');
+    document.getElementById('secret-code').value='';
+  }
+}
+
+/* ── ADMIN ── */
+// Liste dynamique des contributeurs (admin peut en ajouter)
+let CONTRIBS = [
+  {name:'Père Pierre', email:'', dow:1, code:'PIERRE-LUNDI'},
+  {name:'Père Martin', email:'', dow:2, code:'MARTIN-MARDI'},
+  {name:'Père Thomas', email:'', dow:3, code:'THOMAS-MERCREDI'},
+  {name:'Père Jean', email:'', dow:4, code:'JEAN-JEUDI'},
+  {name:'Père André', email:'', dow:5, code:'ANDRE-VENDREDI'},
+  {name:'Père Bernard', email:'', dow:6, code:'BERNARD-SAMEDI'},
+  {name:'Père François', email:'', dow:0, code:'FRANCOIS-DIMANCHE'},
+];
+const DAYS_FULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+function renderAdmin(){
+  // Contributeurs
+  const list=document.getElementById('admin-contrib-list');
+  if(!list)return;
+  list.innerHTML=CONTRIBS.map((c,i)=>`
+    <div class="contrib-row">
+      <div class="contrib-info">
+        <div class="cn">${c.name}</div>
+        <div class="cd">${DAYS_FULL[c.dow]} · Code : ${c.code}</div>
+        ${c.email?`<div class="cd">${c.email}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="contrib-badge">${DAYS_FULL[c.dow]}</span>
+        <button class="del-btn" onclick="removeContrib(${i})">✕</button>
+      </div>
+    </div>`).join('');
+
+  // Homélies publiées
+  const homList=document.getElementById('admin-homélies-list');
+  const keys=Object.keys(G.homélies);
+  if(keys.length===0){
+    homList.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Aucune homélie publiée par les contributeurs.</div>';
+    return;
+  }
+  homList.innerHTML=keys.sort().reverse().map(key=>{
+    const [y,m,d]=key.split('-').map(Number);
+    const date=new Date(y,m-1,d);
+    const label=DAYS_FULL[date.getDay()]+' '+d+' '+['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'][m-1];
+    const text=G.homélies[key];
+    return `<div class="homelie-admin-row">
+      <div class="ha-date">${label}</div>
+      <div class="ha-preview">${text.replace(/<[^>]+>/g,'').substring(0,100)}…</div>
+      <button class="unpub-btn" onclick="unpublishHomelie('${key}')">Dépublier</button>
+    </div>`;
+  }).join('');
+}
+
+function unpublishHomelie(key){
+  delete G.homélies[key];
+  renderAdmin();
+  showToast('Homélie dépubliée');
+}
+
+function showAddContrib(){
+  const f=document.getElementById('add-contrib-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function addContrib(){
+  const name=document.getElementById('new-contrib-name').value.trim();
+  const email=document.getElementById('new-contrib-email').value.trim();
+  const dow=parseInt(document.getElementById('new-contrib-dow').value);
+  const code=document.getElementById('new-contrib-code').value.trim().toUpperCase();
+  if(!name||!code){showToast('Nom et code obligatoires');return;}
+  CONTRIBS.push({name,email,dow,code});
+  CONTRIB_CODES[code]={name,dow};
+  document.getElementById('add-contrib-form').style.display='none';
+  document.getElementById('new-contrib-name').value='';
+  document.getElementById('new-contrib-email').value='';
+  document.getElementById('new-contrib-code').value='';
+  renderAdmin();
+  showToast('✝ Contributeur ajouté');
+}
+
+function removeContrib(i){
+  const c=CONTRIBS[i];
+  delete CONTRIB_CODES[c.code];
+  CONTRIBS.splice(i,1);
+  renderAdmin();
+  showToast('Contributeur supprimé');
 }
 
 </script>
