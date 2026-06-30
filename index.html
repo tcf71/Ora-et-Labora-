@@ -9,6 +9,9 @@
 <meta name="theme-color" content="#e8e8e4">
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzJhMmEyNiIvPjxyZWN0IHg9Ijc4IiB5PSIzMCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjEyMCIgcng9IjgiIGZpbGw9IiNlOGU4ZTQiLz48cmVjdCB4PSIzNiIgeT0iNjYiIHdpZHRoPSIxMDgiIGhlaWdodD0iMjQiIHJ4PSI4IiBmaWxsPSIjZThlOGU0Ii8+PC9zdmc+">
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <title>Ora et Labora</title>
 <style>
 :root {
@@ -34,7 +37,7 @@ html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe
 }
 .hdr-left{display:flex;align-items:center;gap:8px;}
 
-.hdr-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase;}
+.hdr-title{font-family:'EB Garamond',Georgia,serif;font-size:15px;font-weight:700;color:var(--accent);letter-spacing:0.04em;font-variant:small-caps;}
 .hdr-sub{font-size:10px;color:var(--muted);margin-top:1px;}
 .hdr-right{display:flex;align-items:center;gap:7px;}
 .score-chip{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--accent);}
@@ -56,7 +59,7 @@ html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe
 .dn{font-size:14px;font-weight:600;color:var(--text);}
 .day-card.today .dn{color:var(--accent);}
 .dm{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
-.dname{font-size:13px;font-weight:600;color:var(--text);}
+.dname{font-family:'EB Garamond',Georgia,serif;font-size:15px;font-weight:700;color:var(--text);font-variant:small-caps;}
 .day-card.today .dname{color:var(--accent);}
 .dfeast{font-size:10px;color:var(--muted);margin-top:1px;}
 .day-progress-dots{display:flex;gap:4px;}
@@ -69,17 +72,87 @@ html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe
 .day-card.collapsed .day-body{display:none;}
 .chev{font-size:13px;color:var(--muted);transition:transform 0.2s;display:inline-block;}
 
+/* ── TILE GRID LAYOUT (Lectures/Homélie/Ave/Chapelet/Rosaire/Litanies) ── */
+.grid-row-3 { display:grid;grid-template-columns:0.8fr 0.8fr 1.4fr;gap:7px;padding:10px 12px 0;align-items:stretch; }
+.grid-row-2 { display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px 12px 0;align-items:stretch; }
+.tile {
+  background:rgba(232,232,228,0.5);
+  border:1px solid rgba(180,180,172,0.5);
+  border-radius:16px;padding:10px 10px 9px;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  height:100%;
+}
+.tile .pill { margin-top:auto; align-self:stretch; max-width:none; }
+.tile.done-tile { background:rgba(160,230,190,0.18); border-color:rgba(30,122,66,0.3); }
+.tile-label-v { display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;font-family:'EB Garamond',Georgia,serif;font-size:15px;font-weight:700;letter-spacing:0.04em;font-variant:small-caps;color:var(--text); }
+.tile-label-v .tico { width:20px;height:20px; }
+.tile-label-h { display:flex;align-items:center;justify-content:center;gap:5px;font-family:'EB Garamond',Georgia,serif;font-size:15px;font-weight:700;letter-spacing:0.04em;font-variant:small-caps;color:var(--text); }
+.tile-label-h .tico { width:18px;height:18px; }
+.tile-sub { font-size:9px;color:var(--muted);text-align:center; }
+
+.beads-row { display:flex;gap:4px;justify-content:center; }
+.bead {
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;cursor:pointer;
+  border:1.5px solid var(--border);color:var(--muted);
+  background:rgba(255,255,255,0.5);
+  transition:all 0.2s;
+}
+.bead:hover { transform:scale(1.1); }
+.bead.done {
+  border-color:var(--done-border);color:#fff;
+  background:linear-gradient(160deg,#34d475,var(--done-border));
+  box-shadow:0 2px 6px rgba(30,122,66,0.35);
+}
+
+.lit-tile-big { padding:10px 10px 9px;align-items:stretch; }
+.lit-grid { display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:7px;width:100%; }
+.lit-cell {
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:8px 6px;
+}
+.lit-cell-name { font-family:'EB Garamond',Georgia,serif;font-size:12px;font-weight:600;font-variant:small-caps;color:var(--text);display:flex;align-items:center;gap:4px;text-align:center;line-height:1.25; }
+.lit-cell .pill { width:100%;flex-shrink:0;margin-top:2px;font-size:10px;padding:7px 0; }
+
 /* SECTIONS */
 .section{padding:10px 14px;border-top:1px solid var(--border);}
 .section-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .section-label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);}
 .cross{font-size:11px;color:var(--accent);}
-.pill{display:inline-flex;align-items:center;justify-content:center;width:108px;padding:7px 0;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all 0.25s;white-space:nowrap;background:transparent;flex-shrink:0;}
-.pill.red{color:var(--red-text);border-color:var(--red-border);background:var(--red-bg);}
-.pill.red:hover{filter:brightness(0.93);transform:scale(1.02);}
-.pill.green{color:var(--done-text);border-color:var(--done-border);background:var(--done-bg);cursor:pointer;}
-.pill.orange{color:var(--orange-text);border-color:var(--orange-border);background:var(--orange-bg);cursor:pointer;}
-.pill.orange:hover{opacity:0.82;}
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:100%;max-width:108px;padding:9px 0;border-radius:999px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  letter-spacing:0.02em;white-space:nowrap;flex-shrink:0;
+  transition:all 0.2s;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.pill.red{
+  color:#8a1a08;
+  background:rgba(255,200,195,0.4);
+  border:1px solid rgba(181,42,26,0.35);
+  box-shadow:0 4px 20px rgba(181,42,26,0.18),0 1px 3px rgba(0,0,0,0.06),inset 0 2px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(181,42,26,0.15);
+}
+.pill.red:hover{box-shadow:0 6px 24px rgba(181,42,26,0.25),inset 0 2px 0 rgba(255,255,255,0.9);transform:translateY(-1px);}
+.pill.red:active{transform:translateY(1px);box-shadow:0 2px 10px rgba(181,42,26,0.15),inset 0 1px 0 rgba(255,255,255,0.6);}
+.pill.green{
+  color:#0a4020;
+  background:rgba(160,230,190,0.4);
+  border:1px solid rgba(30,122,66,0.35);
+  box-shadow:0 4px 20px rgba(30,122,66,0.18),0 1px 3px rgba(0,0,0,0.06),inset 0 2px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(30,122,66,0.15);
+  cursor:pointer;
+}
+.pill.green:hover{box-shadow:0 6px 24px rgba(30,122,66,0.25),inset 0 2px 0 rgba(255,255,255,0.9);transform:translateY(-1px);}
+.pill.orange{
+  color:#6b3000;
+  background:rgba(255,215,150,0.4);
+  border:1px solid rgba(217,119,6,0.35);
+  box-shadow:0 4px 20px rgba(217,119,6,0.18),0 1px 3px rgba(0,0,0,0.06),inset 0 2px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(217,119,6,0.15);
+  cursor:pointer;
+}
+.pill.orange:hover{box-shadow:0 6px 24px rgba(217,119,6,0.25),inset 0 2px 0 rgba(255,255,255,0.9);transform:translateY(-1px);}
 .pill.flipping{animation:flip 0.22s ease;}
 @keyframes flip{0%{transform:scale(1)}40%{transform:scale(0.88)}100%{transform:scale(1)}}
 .section.done-section{background:rgba(30,122,66,0.06);}
@@ -125,14 +198,14 @@ html,body{background:var(--bg);min-height:100vh;font-family:-apple-system,'Segoe
 /* ── PAGE MON COMPTE ── */
 .compte-hero{background:var(--card);border-bottom:1px solid var(--border);padding:24px 20px;text-align:center;}
 .compte-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid var(--accent);margin:0 auto 10px;}
-.compte-name{font-size:17px;font-weight:700;color:var(--text);}
+.compte-name{font-family:'EB Garamond',Georgia,serif;font-size:20px;font-weight:700;color:var(--text);font-variant:small-caps;}
 .compte-title{font-size:11px;color:var(--muted);margin-top:2px;}
 .compte-score-block{display:inline-flex;align-items:baseline;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:8px 18px;margin-top:12px;}
 .big-score{font-size:28px;font-weight:700;color:var(--accent);}
 .score-unit{font-size:12px;color:var(--muted);}
 .compte-body{padding:14px 14px 0;max-width:480px;margin:0 auto;}
 .compte-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;}
-.compte-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:12px;}
+.compte-section-title{font-family:'EB Garamond',Georgia,serif;font-size:14px;font-weight:600;font-variant:small-caps;letter-spacing:0.04em;color:var(--muted);margin-bottom:12px;}
 .field-row{margin-bottom:10px;}
 .field-row:last-child{margin-bottom:0;}
 .field-label{font-size:11px;color:var(--muted);margin-bottom:4px;}
@@ -172,7 +245,7 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 .soutenir-hero h2{font-size:17px;font-weight:700;color:var(--text);margin-top:8px;}
 .soutenir-hero p{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;}
 .don-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;}
-.don-card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:12px;}
+.don-card-title{font-family:'EB Garamond',Georgia,serif;font-size:14px;font-weight:600;font-variant:small-caps;letter-spacing:0.04em;color:var(--muted);margin-bottom:12px;}
 .don-amounts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
 .don-amt{padding:8px 4px;border-radius:12px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all 0.18s;text-align:center;}
 .don-amt:hover{border-color:var(--accent);color:var(--accent);}
@@ -202,6 +275,34 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 .ha-author{font-size:10px;color:var(--muted);margin-top:1px;}
 .ha-preview{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;}
 .unpub-btn{font-size:10px;color:var(--red-text);background:none;border:1px solid var(--red-border);border-radius:999px;cursor:pointer;padding:3px 9px;margin-top:6px;}
+
+#reader-actions{display:flex;gap:10px;margin:28px 20px 0;max-width:480px;margin-left:auto;margin-right:auto;padding:0 20px;}
+.reader-btn{
+  flex:1;padding:12px 0;border-radius:999px;
+  font-size:12px;font-weight:700;cursor:pointer;
+  letter-spacing:0.02em;text-align:center;transition:all 0.2s;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.reader-btn.inactive{
+  color:var(--muted);
+  background:rgba(200,200,192,0.35);
+  border:1px solid rgba(180,180,172,0.4);
+  box-shadow:0 3px 14px rgba(0,0,0,0.07),inset 0 1.5px 0 rgba(255,255,255,0.7);
+}
+.reader-btn.active-read{
+  color:#0a4020;
+  background:rgba(160,230,190,0.4);
+  border:1px solid rgba(30,122,66,0.35);
+  box-shadow:0 4px 20px rgba(30,122,66,0.18),inset 0 2px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(30,122,66,0.15);
+}
+.reader-btn.active-read:hover{box-shadow:0 6px 24px rgba(30,122,66,0.25),inset 0 2px 0 rgba(255,255,255,0.9);transform:translateY(-1px);}
+.reader-btn.active-unread{
+  color:#8a1a08;
+  background:rgba(255,200,195,0.4);
+  border:1px solid rgba(181,42,26,0.35);
+  box-shadow:0 4px 20px rgba(181,42,26,0.18),inset 0 2px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(181,42,26,0.15);
+}
+.reader-btn.active-unread:hover{box-shadow:0 6px 24px rgba(181,42,26,0.25),inset 0 2px 0 rgba(255,255,255,0.9);transform:translateY(-1px);}
 
 /* TOAST */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card);border:1.5px solid var(--accent);color:var(--accent);font-size:12px;font-weight:600;padding:9px 18px;border-radius:999px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap;}
@@ -366,7 +467,7 @@ textarea.homelie-input:focus{border-color:var(--accent);}
     </div>
     <div class="compte-section">
       <div class="compte-section-title">📖 Homélies publiées</div>
-      <div id="admin-homélies-list"></div>
+      <div id="admin-homelies-list"></div>
     </div>
     <div style="height:8px;"></div>
   </div>
@@ -383,13 +484,20 @@ textarea.homelie-input:focus{border-color:var(--accent);}
   <div id="reader-body">
     <div id="reader-ref"></div>
     <div id="reader-text"></div>
-    <button id="reader-done-btn" onclick="markReaderDone()">J'ai lu — marquer comme fait ✓</button>
+    <div id="reader-actions">
+      <button class="reader-btn inactive" id="reader-btn-read" onclick="setReaderState(true)">J'ai lu ✓</button>
+      <button class="reader-btn active-unread" id="reader-btn-unread" onclick="setReaderState(false)">Non lu</button>
+    </div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
+const SVG_VIERGE = '<svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><line x1="30" y1="6" x2="30" y2="1" stroke="#d4a820" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/><line x1="38" y1="8" x2="41" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><line x1="22" y1="8" x2="19" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><circle cx="30" cy="15" r="9" fill="none" stroke="#d4a820" stroke-width="1.5" opacity="0.8"/><circle cx="30" cy="6.5" r="1.4" fill="#d4a820"/><circle cx="36.5" cy="8.5" r="1.1" fill="#d4a820"/><circle cx="23.5" cy="8.5" r="1.1" fill="#d4a820"/><ellipse cx="30" cy="15" rx="7" ry="7.5" fill="#f0d4b0"/><path d="M19 18 Q19 13 24 12 L30 11 L36 12 Q41 13 41 18 L41 23 Q36 21 30 21 Q24 21 19 23 Z" fill="#2a5a9a"/><path d="M13 60 L13 34 Q13 25 21 23 L30 21 L39 23 Q47 25 47 34 L47 60 Z" fill="#2a5a9a"/><path d="M21 60 L21 38 Q21 30 30 28 Q39 30 39 38 L39 60 Z" fill="#f0f0ea"/></svg>';
+const SVG_CHAPELET = '<svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><circle cx="30" cy="27" r="17" fill="none" stroke="#b8b8b0" stroke-width="1.3" stroke-dasharray="2.8 3.2"/><circle cx="30" cy="10" r="3.2" fill="#2a2a26"/><circle cx="44" cy="18" r="3.2" fill="#2a2a26"/><circle cx="44" cy="35" r="3.2" fill="#2a2a26"/><circle cx="30" cy="44" r="3.2" fill="#2a2a26"/><circle cx="16" cy="35" r="3.2" fill="#2a2a26"/><circle cx="16" cy="18" r="3.2" fill="#2a2a26"/></svg>';
+const SVG_COURONNE = '<svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M11 42 L11 30 L20 37 L30 19 L40 37 L49 30 L49 42 Z" fill="#2a2a26"/><rect x="11" y="40" width="38" height="8" rx="2.5" fill="#2a2a26"/><rect x="11" y="40" width="38" height="3.5" rx="1.5" fill="#d4a820"/><circle cx="30" cy="41.5" r="3" fill="#8b1a1a"/></svg>';
+const SVG_LITANIE = '<svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><rect x="10" y="8" width="34" height="44" rx="4" fill="#e8e8e2" stroke="#b8b8b0" stroke-width="2"/><rect x="16" y="18" width="22" height="2.5" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="16" y="25" width="22" height="2.5" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="16" y="32" width="16" height="2.5" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="16" y="39" width="20" height="2.5" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="28" y="6" width="3" height="8" rx="1.5" fill="#b52a1a"/></svg>';
 const DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 const MONTHS=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
 const MONTHS_LONG=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -553,6 +661,71 @@ const READINGS=[
   },
 ];
 
+
+const LITANIES = [
+  {
+    id: 'sacre-coeur', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21 C12 21 3 14 3 8 A4 4 0 0 1 11 7 L12 8 L13 7 A4 4 0 0 1 21 8 C21 14 12 21 12 21Z" fill="#b52a1a"/></svg>',
+    titre: 'Litanies du Sacré-Cœur',
+    source: 'La Porte Latine',
+    text: `<p style="text-align:center;font-style:italic;color:var(--muted);margin-bottom:14px;">Approuvées par l'Église · Indulgences accordées</p>
+<p>Seigneur, ayez pitié de nous.<br>Jésus-Christ, ayez pitié de nous.<br>Seigneur, ayez pitié de nous.<br>Jésus-Christ, écoutez-nous.<br>Jésus-Christ, exaucez-nous.</p>
+<p>Père céleste qui êtes Dieu, <em>ayez pitié de nous.</em><br>Fils, Rédempteur du monde qui êtes Dieu, <em>ayez pitié de nous.</em><br>Esprit-Saint qui êtes Dieu, <em>ayez pitié de nous.</em><br>Trinité Sainte, qui êtes un seul Dieu, <em>ayez pitié de nous.</em></p>
+<p>Cœur de Jésus, Fils du Père éternel, <em>ayez pitié de nous.</em><br>Cœur de Jésus, formé par le Saint-Esprit dans le sein de la Vierge Mère, <em>ayez pitié de nous.</em><br>Cœur de Jésus, uni substantiellement au Verbe de Dieu, <em>ayez pitié de nous.</em><br>Cœur de Jésus, d'une infinie majesté, <em>ayez pitié de nous.</em><br>Cœur de Jésus, temple saint de Dieu, <em>ayez pitié de nous.</em><br>Cœur de Jésus, tabernacle du Très-Haut, <em>ayez pitié de nous.</em><br>Cœur de Jésus, maison de Dieu et porte du ciel, <em>ayez pitié de nous.</em><br>Cœur de Jésus, fournaise ardente de charité, <em>ayez pitié de nous.</em><br>Cœur de Jésus, sanctuaire de la justice et de l'amour, <em>ayez pitié de nous.</em><br>Cœur de Jésus, plein de bonté et d'amour, <em>ayez pitié de nous.</em><br>Cœur de Jésus, abîme de toutes les vertus, <em>ayez pitié de nous.</em><br>Cœur de Jésus, très digne de toutes louanges, <em>ayez pitié de nous.</em><br>Cœur de Jésus, Roi et centre de tous les cœurs, <em>ayez pitié de nous.</em><br>Cœur de Jésus, en qui se trouvent tous les trésors de la sagesse et de la science, <em>ayez pitié de nous.</em><br>Cœur de Jésus, en qui réside toute la plénitude de la Divinité, <em>ayez pitié de nous.</em><br>Cœur de Jésus, objet des complaisances du Père, <em>ayez pitié de nous.</em><br>Cœur de Jésus, dont la plénitude se répand sur nous tous, <em>ayez pitié de nous.</em><br>Cœur de Jésus, désiré des collines éternelles, <em>ayez pitié de nous.</em><br>Cœur de Jésus, patient et très miséricordieux, <em>ayez pitié de nous.</em><br>Cœur de Jésus, libéral pour tous ceux qui vous invoquent, <em>ayez pitié de nous.</em><br>Cœur de Jésus, source de vie et de sainteté, <em>ayez pitié de nous.</em><br>Cœur de Jésus, propitiation pour nos péchés, <em>ayez pitié de nous.</em><br>Cœur de Jésus, rassasié d'opprobres, <em>ayez pitié de nous.</em><br>Cœur de Jésus, brisé pour nos crimes, <em>ayez pitié de nous.</em><br>Cœur de Jésus, obéissant jusqu'à la mort, <em>ayez pitié de nous.</em><br>Cœur de Jésus, percé d'une lance, <em>ayez pitié de nous.</em><br>Cœur de Jésus, source de toute consolation, <em>ayez pitié de nous.</em><br>Cœur de Jésus, notre vie et notre résurrection, <em>ayez pitié de nous.</em><br>Cœur de Jésus, notre paix et notre réconciliation, <em>ayez pitié de nous.</em><br>Cœur de Jésus, victime des péchés des hommes, <em>ayez pitié de nous.</em><br>Cœur de Jésus, salut de ceux qui espèrent en vous, <em>ayez pitié de nous.</em><br>Cœur de Jésus, espérance de ceux qui meurent en vous, <em>ayez pitié de nous.</em><br>Cœur de Jésus, délices de tous les saints, <em>ayez pitié de nous.</em></p>
+<p>Agneau de Dieu, qui effacez les péchés du monde, <em>pardonnez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>exaucez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>ayez pitié de nous.</em></p>
+<p>Jésus doux et humble de cœur, <em>rendez notre cœur semblable au vôtre.</em></p>
+<p><strong>Prions.</strong> Dieu tout-puissant et éternel, regardez le Cœur de votre Fils bien-aimé et les louanges et satisfactions qu'il vous a offertes au nom des pécheurs ; apaisé par ce juste hommage, pardonnez à ceux qui implorent votre miséricorde. Par le même Jésus-Christ votre Fils, qui vit et règne avec vous dans les siècles des siècles. Amen.</p>`
+  },
+  {
+    id: 'saints', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="#d4a820"/><rect x="11" y="2" width="2" height="20" fill="#2a2a26" rx="1"/><rect x="6" y="6" width="12" height="2" fill="#2a2a26" rx="1"/></svg>',
+    titre: 'Litanies des Saints',
+    source: 'La Porte Latine',
+    text: `<p style="text-align:center;font-style:italic;color:var(--muted);margin-bottom:14px;">Litanies approuvées par l'Église</p>
+<p>Seigneur, ayez pitié de nous.<br>Jésus-Christ, ayez pitié de nous.<br>Seigneur, ayez pitié de nous.<br>Jésus-Christ, écoutez-nous.<br>Jésus-Christ, exaucez-nous.</p>
+<p>Père céleste qui êtes Dieu, <em>ayez pitié de nous.</em><br>Fils, Rédempteur du monde qui êtes Dieu, <em>ayez pitié de nous.</em><br>Esprit-Saint qui êtes Dieu, <em>ayez pitié de nous.</em><br>Trinité Sainte, qui êtes un seul Dieu, <em>ayez pitié de nous.</em></p>
+<p>Sainte Marie, <em>priez pour nous.</em><br>Sainte Mère de Dieu, <em>priez pour nous.</em><br>Sainte Vierge des vierges, <em>priez pour nous.</em><br>Saint Michel, <em>priez pour nous.</em><br>Saint Gabriel, <em>priez pour nous.</em><br>Saint Raphaël, <em>priez pour nous.</em><br>Saints Anges et Archanges, <em>priez pour nous.</em><br>Saint Jean-Baptiste, <em>priez pour nous.</em><br>Saint Joseph, <em>priez pour nous.</em><br>Tous les Saints Patriarches et Prophètes, <em>priez pour nous.</em></p>
+<p>Saint Pierre, <em>priez pour nous.</em><br>Saint Paul, <em>priez pour nous.</em><br>Saint André, <em>priez pour nous.</em><br>Saint Jacques, <em>priez pour nous.</em><br>Saint Jean, <em>priez pour nous.</em><br>Saint Thomas, <em>priez pour nous.</em><br>Saint Jacques, <em>priez pour nous.</em><br>Saint Philippe, <em>priez pour nous.</em><br>Saint Barthélemy, <em>priez pour nous.</em><br>Saint Matthieu, <em>priez pour nous.</em><br>Saint Simon, <em>priez pour nous.</em><br>Saint Thaddée, <em>priez pour nous.</em><br>Saint Matthias, <em>priez pour nous.</em><br>Saint Barnabé, <em>priez pour nous.</em><br>Saint Luc, <em>priez pour nous.</em><br>Saint Marc, <em>priez pour nous.</em><br>Tous les Saints Apôtres et Évangélistes, <em>priez pour nous.</em></p>
+<p>Saint Étienne, <em>priez pour nous.</em><br>Saint Laurent, <em>priez pour nous.</em><br>Saint Vincent, <em>priez pour nous.</em><br>Saints Fabien et Sébastien, <em>priez pour nous.</em><br>Saints Jean et Paul, <em>priez pour nous.</em><br>Saints Côme et Damien, <em>priez pour nous.</em><br>Tous les Saints Martyrs, <em>priez pour nous.</em></p>
+<p>Saint Sylvestre, <em>priez pour nous.</em><br>Saint Grégoire, <em>priez pour nous.</em><br>Saint Ambroise, <em>priez pour nous.</em><br>Saint Augustin, <em>priez pour nous.</em><br>Saint Jérôme, <em>priez pour nous.</em><br>Saint Martin, <em>priez pour nous.</em><br>Saint Nicolas, <em>priez pour nous.</em><br>Tous les Saints Évêques et Confesseurs, <em>priez pour nous.</em><br>Tous les Saints Docteurs, <em>priez pour nous.</em></p>
+<p>Saint Antoine, <em>priez pour nous.</em><br>Saint Benoît, <em>priez pour nous.</em><br>Saint Bernard, <em>priez pour nous.</em><br>Saint Dominique, <em>priez pour nous.</em><br>Saint François, <em>priez pour nous.</em><br>Tous les Saints Prêtres et Lévites, <em>priez pour nous.</em><br>Tous les Saints Moines et Ermites, <em>priez pour nous.</em></p>
+<p>Sainte Marie-Madeleine, <em>priez pour nous.</em><br>Sainte Agathe, <em>priez pour nous.</em><br>Sainte Lucie, <em>priez pour nous.</em><br>Sainte Agnès, <em>priez pour nous.</em><br>Sainte Cécile, <em>priez pour nous.</em><br>Sainte Catherine, <em>priez pour nous.</em><br>Sainte Anastasie, <em>priez pour nous.</em><br>Toutes les Saintes Vierges et Veuves, <em>priez pour nous.</em><br>Tous les Saints et Saintes de Dieu, <em>intercédez pour nous.</em></p>
+<p>Soyez-nous propice, <em>pardonnez-nous, Seigneur.</em><br>Soyez-nous propice, <em>exaucez-nous, Seigneur.</em></p>
+<p>De tout mal, <em>délivrez-nous, Seigneur.</em><br>De tout péché, <em>délivrez-nous, Seigneur.</em><br>De votre colère, <em>délivrez-nous, Seigneur.</em><br>Des embûches du démon, <em>délivrez-nous, Seigneur.</em><br>De l'esprit d'impureté, <em>délivrez-nous, Seigneur.</em><br>De la mort éternelle, <em>délivrez-nous, Seigneur.</em><br>Par le mystère de votre sainte Incarnation, <em>délivrez-nous, Seigneur.</em><br>Par votre Nativité, <em>délivrez-nous, Seigneur.</em><br>Par votre Baptême et votre saint Jeûne, <em>délivrez-nous, Seigneur.</em><br>Par votre Croix et votre Passion, <em>délivrez-nous, Seigneur.</em><br>Par votre Mort et votre Sépulture, <em>délivrez-nous, Seigneur.</em><br>Par votre sainte Résurrection, <em>délivrez-nous, Seigneur.</em><br>Par votre admirable Ascension, <em>délivrez-nous, Seigneur.</em><br>Par l'avènement du Saint-Esprit Paraclet, <em>délivrez-nous, Seigneur.</em><br>Au Jour du Jugement, <em>délivrez-nous, Seigneur.</em></p>
+<p>Agneau de Dieu, qui effacez les péchés du monde, <em>pardonnez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>exaucez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>ayez pitié de nous.</em></p>
+<p>Jésus-Christ, écoutez-nous. Jésus-Christ, exaucez-nous.</p>
+<p>Seigneur, ayez pitié de nous. Jésus-Christ, ayez pitié de nous. Seigneur, ayez pitié de nous.</p>`
+  },
+  {
+    id: 'vierge', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 18 L5 12 L8 15 L12 6 L16 15 L19 12 L19 18 Z" fill="#d4a820"/><circle cx="12" cy="6" r="1.3" fill="#2a5a9a"/></svg>',
+    titre: 'Litanies de la Très Sainte Vierge',
+    source: 'La Porte Latine',
+    text: `<p style="text-align:center;font-style:italic;color:var(--muted);margin-bottom:14px;">Litanies de Lorette · Approuvées par l'Église</p>
+<p>Seigneur, ayez pitié de nous.<br>Jésus-Christ, ayez pitié de nous.<br>Seigneur, ayez pitié de nous.<br>Jésus-Christ, écoutez-nous.<br>Jésus-Christ, exaucez-nous.</p>
+<p>Père céleste qui êtes Dieu, <em>ayez pitié de nous.</em><br>Fils, Rédempteur du monde qui êtes Dieu, <em>ayez pitié de nous.</em><br>Esprit-Saint qui êtes Dieu, <em>ayez pitié de nous.</em><br>Trinité Sainte, qui êtes un seul Dieu, <em>ayez pitié de nous.</em></p>
+<p>Sainte Marie, <em>priez pour nous.</em><br>Sainte Mère de Dieu, <em>priez pour nous.</em><br>Sainte Vierge des vierges, <em>priez pour nous.</em><br>Mère du Christ, <em>priez pour nous.</em><br>Mère de l'Église, <em>priez pour nous.</em><br>Mère de la divine grâce, <em>priez pour nous.</em><br>Mère très pure, <em>priez pour nous.</em><br>Mère très chaste, <em>priez pour nous.</em><br>Mère inviolable, <em>priez pour nous.</em><br>Mère immaculée, <em>priez pour nous.</em><br>Mère aimable, <em>priez pour nous.</em><br>Mère admirable, <em>priez pour nous.</em><br>Mère du bon conseil, <em>priez pour nous.</em><br>Mère du Créateur, <em>priez pour nous.</em><br>Mère du Sauveur, <em>priez pour nous.</em></p>
+<p>Vierge très prudente, <em>priez pour nous.</em><br>Vierge vénérable, <em>priez pour nous.</em><br>Vierge digne de louanges, <em>priez pour nous.</em><br>Vierge puissante, <em>priez pour nous.</em><br>Vierge clémente, <em>priez pour nous.</em><br>Vierge fidèle, <em>priez pour nous.</em></p>
+<p>Miroir de justice, <em>priez pour nous.</em><br>Siège de la sagesse, <em>priez pour nous.</em><br>Cause de notre joie, <em>priez pour nous.</em><br>Vase spirituel, <em>priez pour nous.</em><br>Vase digne d'honneur, <em>priez pour nous.</em><br>Vase insigne de dévotion, <em>priez pour nous.</em><br>Rose mystique, <em>priez pour nous.</em><br>Tour de David, <em>priez pour nous.</em><br>Tour d'ivoire, <em>priez pour nous.</em><br>Maison d'or, <em>priez pour nous.</em><br>Arche d'alliance, <em>priez pour nous.</em><br>Porte du ciel, <em>priez pour nous.</em><br>Étoile du matin, <em>priez pour nous.</em></p>
+<p>Santé des malades, <em>priez pour nous.</em><br>Refuge des pécheurs, <em>priez pour nous.</em><br>Consolatrice des affligés, <em>priez pour nous.</em><br>Secours des chrétiens, <em>priez pour nous.</em></p>
+<p>Reine des Anges, <em>priez pour nous.</em><br>Reine des Patriarches, <em>priez pour nous.</em><br>Reine des Prophètes, <em>priez pour nous.</em><br>Reine des Apôtres, <em>priez pour nous.</em><br>Reine des Martyrs, <em>priez pour nous.</em><br>Reine des Confesseurs, <em>priez pour nous.</em><br>Reine des Vierges, <em>priez pour nous.</em><br>Reine de tous les Saints, <em>priez pour nous.</em><br>Reine conçue sans le péché originel, <em>priez pour nous.</em><br>Reine élevée aux cieux, <em>priez pour nous.</em><br>Reine du très saint Rosaire, <em>priez pour nous.</em><br>Reine de la famille, <em>priez pour nous.</em><br>Reine de la paix, <em>priez pour nous.</em></p>
+<p>Agneau de Dieu, qui effacez les péchés du monde, <em>pardonnez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>exaucez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>ayez pitié de nous.</em></p>
+<p>Priez pour nous, sainte Mère de Dieu, <em>afin que nous soyons rendus dignes des promesses de Jésus-Christ.</em></p>
+<p><strong>Prions.</strong> Répandez, Seigneur, votre grâce dans nos âmes ; vous qui avez connu l'Incarnation du Christ votre Fils par l'annonce de l'Ange ; faites que nous puissions, par sa Passion et sa Croix, être conduits à la gloire de la Résurrection. Par le même Jésus-Christ Notre-Seigneur. Amen.</p>`
+  },
+  {
+    id: 'joseph', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3 C12 3 6 9 6 14 C6 17.5 9 20 12 20 C15 20 18 17.5 18 14 C18 9 12 3 12 3Z" fill="#3a6aaa"/></svg>',
+    titre: 'Litanies de saint Joseph',
+    source: 'La Porte Latine',
+    text: `<p style="text-align:center;font-style:italic;color:var(--muted);margin-bottom:14px;">Approuvées par saint Pie X le 18 mars 1909</p>
+<p>Seigneur, ayez pitié de nous.<br>Jésus-Christ, ayez pitié de nous.<br>Seigneur, ayez pitié de nous.<br>Jésus-Christ, écoutez-nous.<br>Jésus-Christ, exaucez-nous.</p>
+<p>Père céleste qui êtes Dieu, <em>ayez pitié de nous.</em><br>Fils, Rédempteur du monde qui êtes Dieu, <em>ayez pitié de nous.</em><br>Esprit-Saint qui êtes Dieu, <em>ayez pitié de nous.</em><br>Trinité Sainte, qui êtes un seul Dieu, <em>ayez pitié de nous.</em></p>
+<p>Sainte Marie, <em>priez pour nous.</em><br>Saint Joseph, <em>priez pour nous.</em><br>Illustre descendant de David, <em>priez pour nous.</em><br>Lumière des Patriarches, <em>priez pour nous.</em><br>Époux de la Mère de Dieu, <em>priez pour nous.</em><br>Gardien chaste de la Vierge, <em>priez pour nous.</em><br>Nourricier du Fils de Dieu, <em>priez pour nous.</em><br>Vigilant défenseur du Christ, <em>priez pour nous.</em><br>Chef de la Sainte Famille, <em>priez pour nous.</em></p>
+<p>Joseph très juste, <em>priez pour nous.</em><br>Joseph très chaste, <em>priez pour nous.</em><br>Joseph très prudent, <em>priez pour nous.</em><br>Joseph très fort, <em>priez pour nous.</em><br>Joseph très obéissant, <em>priez pour nous.</em><br>Joseph très fidèle, <em>priez pour nous.</em></p>
+<p>Miroir de patience, <em>priez pour nous.</em><br>Amateur de pauvreté, <em>priez pour nous.</em><br>Modèle des artisans, <em>priez pour nous.</em><br>Gloire de la vie domestique, <em>priez pour nous.</em><br>Gardien des vierges, <em>priez pour nous.</em><br>Soutien des familles, <em>priez pour nous.</em><br>Consolation des affligés, <em>priez pour nous.</em><br>Espérance des malades, <em>priez pour nous.</em><br>Patron des mourants, <em>priez pour nous.</em><br>Terreur des démons, <em>priez pour nous.</em><br>Protecteur de la sainte Église, <em>priez pour nous.</em></p>
+<p>Agneau de Dieu, qui effacez les péchés du monde, <em>pardonnez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>exaucez-nous, Seigneur.</em><br>Agneau de Dieu, qui effacez les péchés du monde, <em>ayez pitié de nous.</em></p>
+<p>Il l'a établi maître de sa maison, <em>et prince de toutes ses possessions.</em></p>
+<p><strong>Prions.</strong> Ô Dieu, qui dans votre Providence ineffable, avez daigné choisir le bienheureux Joseph pour époux de votre très sainte Mère ; faites, nous vous en supplions, que celui que nous vénérons sur la terre comme notre protecteur, soit notre intercesseur dans les cieux. Vous qui vivez et régnez dans les siècles des siècles. Amen.</p>`
+  }
+];
+
 const LITURGY = {
   '2026-6-26': {
     feast:'Férie — Vendredi après le Ve Dimanche après la Pentecôte', ref:'Rm 8, 28-39 · Mc 1, 1-8',
@@ -644,7 +817,7 @@ let G={
   chapeletCount:20,rosaryCount:0,
   profile:{prenom:'',nom:'',email:'',mdp:'',role:''},
   days:{},
-  homélies:{} // key=dateStr, value=text
+  homelies:{} // key=dateStr, value=text
 };
 
 // Demo: logged in as contributeur (jour=lundi=1)
@@ -722,61 +895,73 @@ function buildCard(d){
 </div>
 <div class="day-preview">${r.ref} — ${r.epitre}</div>
 <div class="day-body">
-  <div class="section${ds.lectures?' done-section':''}" id="sec-lec-${key}">
-    <div class="section-row">
-      <span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M9 13 Q9 11 11 11 L29 11 L29 49 L11 49 Q9 49 9 47 Z" fill="#e8e8e4" stroke="#b8b8b0" stroke-width="1.5"/><path d="M51 13 Q51 11 49 11 L31 11 L31 49 L49 49 Q51 49 51 47 Z" fill="#f4f4f0" stroke="#b8b8b0" stroke-width="1.5"/><rect x="28" y="10" width="4" height="40" rx="2" fill="#2a2a26"/><line x1="13" y1="20" x2="26" y2="20" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="27" x2="26" y2="27" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="34" x2="26" y2="34" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="41" x2="22" y2="41" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><rect x="37" y="17" width="3" height="14" rx="1" fill="#2a2a26" opacity="0.4"/><rect x="32" y="21" width="13" height="3" rx="1" fill="#2a2a26" opacity="0.4"/><line x1="34" y1="37" x2="47" y2="37" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><line x1="34" y1="44" x2="43" y2="44" stroke="#b8b8b0" stroke-width="1.5" stroke-linecap="round"/><path d="M21 49 L21 58 L25 54 L29 58 L29 49" fill="#b52a1a"/></svg>Lectures du jour</span>
-      <button class="pill${ds.lectures?' green':' red'}" id="btn-lec-${key}" onclick="toggleLec('${key}')" style="pointer-events:all;cursor:pointer;">
-        ${ds.lectures?'Lu ✓':'Lire'}
-      </button>
+  <div class="grid-row-3">
+    <div class="tile${ds.lectures?' done-tile':''}" id="sec-lec-${key}">
+      <div class="tile-label-v"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M9 13 Q9 11 11 11 L29 11 L29 49 L11 49 Q9 49 9 47 Z" fill="#e8e8e4" stroke="#b8b8b0" stroke-width="1.5"/><path d="M51 13 Q51 11 49 11 L31 11 L31 49 L49 49 Q51 49 51 47 Z" fill="#f4f4f0" stroke="#b8b8b0" stroke-width="1.5"/><rect x="28" y="10" width="4" height="40" rx="2" fill="#2a2a26"/></svg><span>Lectures</span></div>
+      <button class="pill${ds.lectures?' green':' red'}" id="btn-lec-${key}" onclick="toggleLec('${key}')">${ds.lectures?'Lu ✓':'Lire'}</button>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;">${r.epitre}</div>
-  </div>
-  <div class="section${ds.homelie?' done-section':''}" id="sec-hom-${key}">
-    <div class="section-row">
-      <span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M15 60 L15 37 Q15 31 21 30 L39 30 Q45 31 45 37 L45 60 Z" fill="#1a1a18"/><rect x="24" y="28" width="12" height="5" rx="1.5" fill="white"/><rect x="28" y="28" width="4" height="5" rx="0.5" fill="#1a1a18"/><ellipse cx="30" cy="18" rx="10" ry="11" fill="#d4a882"/><path d="M20 15 Q20 7 30 7 Q40 7 40 15" fill="#2a1a0a"/><circle cx="30" cy="40" r="1.2" fill="#2a2a26" opacity="0.35"/><circle cx="30" cy="48" r="1.2" fill="#2a2a26" opacity="0.35"/></svg>Homélie</span>
-      <button class="pill${ds.homelie?' green':' red'}" id="btn-hom-${key}" onclick="openReader('${key}','homelie')" style="pointer-events:all;cursor:pointer;">
-        ${ds.homelie?'Médité ✓':'Méditer'}
-      </button>
+    <div class="tile${ds.homelie?' done-tile':''}" id="sec-hom-${key}">
+      <div class="tile-label-v"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M15 60 L15 37 Q15 31 21 30 L39 30 Q45 31 45 37 L45 60 Z" fill="#1a1a18"/><rect x="24" y="28" width="12" height="5" rx="1.5" fill="white"/><ellipse cx="30" cy="18" rx="10" ry="11" fill="#d4a882"/><path d="M20 15 Q20 7 30 7 Q40 7 40 15" fill="#2a1a0a"/></svg><span>Homélie</span></div>
+      <button class="pill${ds.homelie?' green':' red'}" id="btn-hom-${key}" onclick="toggleHom('${key}')">${ds.homelie?'Médité ✓':'Méditer'}</button>
+      ${(!G.homelies[key]&&!LITURGY[key])?`<div style="font-size:8px;color:var(--orange-text);text-align:center;">⏳ à paraître</div>`:''}
     </div>
-    ${(!G.homélies[key]&&!LITURGY[key])?`<div style="font-size:10px;color:var(--orange-text);margin-top:4px;">⏳ Homélie à paraître</div>`:''}
+    ${secAve(key,ds)}
   </div>
-  ${secAve(key,ds)}${secChapelet(key,dow)}${secRosaire(key)}
+  <div class="grid-row-2">
+    ${secChapelet(key,dow)}
+    ${secRosaire(key)}
+  </div>
+  <div style="padding:8px 12px 12px;">
+    ${secLitanies(key,ds)}
+  </div>
 </div>`;
   return wrap;
 }
 
 function secAve(key,ds){
   const sel=G.days[key]._aveSel||0;const hasSel=sel>0;
-  const pills=AVE_OPTIONS.map(o=>`<button class="sub-pill${sel===o.v?' selected':''}" onclick="selAve('${key}',${o.v})">${o.l}</button>`).join('');
-  const btn=ds.ave?`<button class="pill green" onclick="cancelAve('${key}')">Prié ✓</button>`:`<button class="pill${hasSel?' green':' red'}" id="btn-ave-${key}" onclick="doAve('${key}')">Prier${hasSel?' ✓':''}</button>`;
-  return `<div class="section${ds.ave?' done-section':''}" id="sec-ave-${key}">
-  <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><line x1="30" y1="6" x2="30" y2="1" stroke="#d4a820" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/><line x1="38" y1="8" x2="41" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><line x1="22" y1="8" x2="19" y2="3" stroke="#d4a820" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/><circle cx="30" cy="15" r="9" fill="none" stroke="#d4a820" stroke-width="1.5" opacity="0.8"/><circle cx="30" cy="6.5" r="1.4" fill="#d4a820"/><circle cx="36.5" cy="8.5" r="1.1" fill="#d4a820"/><circle cx="23.5" cy="8.5" r="1.1" fill="#d4a820"/><ellipse cx="30" cy="15" rx="7" ry="7.5" fill="#f0d4b0"/><path d="M19 18 Q19 13 24 12 L30 11 L36 12 Q41 13 41 18 L41 23 Q36 21 30 21 Q24 21 19 23 Z" fill="#2a5a9a"/><path d="M13 60 L13 34 Q13 25 21 23 L30 21 L39 23 Q47 25 47 34 L47 60 Z" fill="#2a5a9a"/><path d="M21 60 L21 38 Q21 30 30 28 Q39 30 39 38 L39 60 Z" fill="#f0f0ea"/><path d="M25 40 Q25 37 30 36 Q35 37 35 40 L35 45 Q30 46 25 45 Z" fill="#f0d4b0"/><line x1="23" y1="44" x2="15" y2="54" stroke="#d4a820" stroke-width="1.2" opacity="0.5" stroke-linecap="round"/><line x1="37" y1="44" x2="45" y2="54" stroke="#d4a820" stroke-width="1.2" opacity="0.5" stroke-linecap="round"/></svg>Je vous salue Marie</span>${btn}</div>
-  ${!ds.ave?`<div class="sub-pills">${pills}</div>`:''}
-</div>`;}
+  const beads=AVE_OPTIONS.map(o=>`<div class="bead${sel===o.v?' done':''}" onclick="selAve('${key}',${o.v})">${o.l}</div>`).join('');
+  const btnClass=(ds.ave||hasSel)?'green':'red';
+  const btnLabel='Prier';
+  const onclick=ds.ave?`cancelAve('${key}')`:`doAve('${key}')`;
+  return `<div class="tile${ds.ave?' done-tile':''}" id="sec-ave-${key}">
+    <div class="tile-label-h">${SVG_VIERGE}<span>Ave Maria</span></div>
+    <div class="beads-row">${beads}</div>
+    <button class="pill ${btnClass}" id="btn-ave-${key}" onclick="${onclick}">${btnLabel}</button>
+  </div>`;
+}
 
 function secChapelet(key,dow){
   const count=G.chapeletCount;const isDone=count>=50;const inProg=count>0&&count<50;
-  const pct=Math.min(100,Math.round(count/50*100));
-  const stepPills=CHAP_STEPS.map(v=>`<button class="sub-pill${count>=v?' used undoable':''}" onclick="${count>=v?`revertChap(${v},'${key}')`:`addChapelet(${v},'${key}')`}">${v}×</button>`).join('');
-  const pillBtn=isDone?`<button class="pill green" onclick="undoChap('${key}')">Complété ✓</button>`:inProg?`<button class="pill orange" onclick="undoChap('${key}')">En cours…</button>`:`<span class="pill red">Commencer</span>`;
-  return `<div class="section" id="sec-chap-${key}">
-  <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><circle cx="30" cy="27" r="17" fill="none" stroke="#b8b8b0" stroke-width="1.3" stroke-dasharray="2.8 3.2"/><circle cx="30" cy="10" r="3.2" fill="#2a2a26"/><circle cx="44" cy="18" r="3.2" fill="#2a2a26"/><circle cx="44" cy="35" r="3.2" fill="#2a2a26"/><circle cx="30" cy="44" r="3.2" fill="#2a2a26"/><circle cx="16" cy="35" r="3.2" fill="#2a2a26"/><circle cx="16" cy="18" r="3.2" fill="#2a2a26"/><circle cx="37.5" cy="12" r="2" fill="#565650"/><circle cx="41.5" cy="15" r="2" fill="#565650"/><circle cx="45" cy="27" r="2" fill="#565650"/><circle cx="45" cy="31" r="2" fill="#565650"/><circle cx="37.5" cy="42" r="2" fill="#565650"/><circle cx="22.5" cy="42" r="2" fill="#565650"/><circle cx="15" cy="31" r="2" fill="#565650"/><circle cx="15" cy="27" r="2" fill="#565650"/><circle cx="22.5" cy="12" r="2" fill="#565650"/><circle cx="18.5" cy="15" r="2" fill="#565650"/><line x1="30" y1="47" x2="30" y2="52" stroke="#b8b8b0" stroke-width="1.8"/><circle cx="30" cy="50" r="1.8" fill="#565650"/><rect x="28.2" y="52" width="3.6" height="8" rx="1.2" fill="#2a2a26"/><rect x="25" y="55" width="10" height="3" rx="1.2" fill="#2a2a26"/></svg>Chapelet</span>${pillBtn}</div>
-  <div style="font-size:10px;color:var(--muted);margin-top:3px;">${MYSTERY_TYPES[dow]}</div>
-  ${!isDone?`<div class="sub-pills">${stepPills}</div><div class="chap-progress">${count}/50 Ave Maria<div class="chap-bar-track"><div class="chap-bar-fill" style="width:${pct}%"></div></div></div>`
-  :`<div class="chap-progress" style="color:var(--done-text);">50/50 — Chapelet accompli 🙏</div>`}
-</div>`;}
+  const beads=CHAP_STEPS.map((v,i)=>{
+    const stepDone=count>=v;
+    return `<div class="bead${stepDone?' done':''}" onclick="${stepDone?`revertChap(${v},'${key}')`:`addChapelet(${v},'${key}')`}">${i+1}</div>`;
+  }).join('');
+  const btnClass=isDone?'green':(inProg?'orange':'red');
+  const btnLabel=isDone?'Complété ✓':(inProg?'En cours…':'Commencer');
+  const onclick=count>0?`undoChap('${key}')`:'';
+  return `<div class="tile${isDone?' done-tile':''}" id="sec-chap-${key}">
+    <div class="tile-label-h">${SVG_CHAPELET}<span>Chapelet</span></div>
+    <div class="beads-row">${beads}</div>
+    <button class="pill ${btnClass}" ${onclick?`onclick="${onclick}"`:''}>${btnLabel}</button>
+  </div>`;
+}
 
 function secRosaire(key){
   const count=G.rosaryCount;const isDone=count>=150;const inProg=count>0&&count<150;
-  const pct=Math.min(100,Math.round(count/150*100));
-  const stepPills=ROS_STEPS.map(o=>`<button class="sub-pill${count>=o.v?' used undoable':''}" onclick="${count>=o.v?`revertRos(${o.v},'${key}')`:`addRosaire(${o.v},'${key}')`}">${o.l}</button>`).join('');
-  const pillBtn=isDone?`<button class="pill green" onclick="undoRos('${key}')">Accompli ✓</button>`:inProg?`<button class="pill orange" onclick="undoRos('${key}')">En cours…</button>`:`<span class="pill red">Commencer</span>`;
-  return `<div class="section" id="sec-ros-${key}">
-  <div class="section-row"><span class="section-label"><svg width="18" height="18" viewBox="0 0 60 60" fill="none" style="flex-shrink:0"><path d="M11 42 L11 30 L20 37 L30 19 L40 37 L49 30 L49 42 Z" fill="#2a2a26"/><rect x="11" y="40" width="38" height="8" rx="2.5" fill="#2a2a26"/><rect x="11" y="40" width="38" height="3.5" rx="1.5" fill="#d4a820"/><circle cx="30" cy="41.5" r="3" fill="#8b1a1a"/><circle cx="20" cy="41.5" r="2" fill="#d4a820"/><circle cx="40" cy="41.5" r="2" fill="#d4a820"/><circle cx="30" cy="19" r="3" fill="#d4a820"/><circle cx="20" cy="37" r="2.4" fill="#d4a820"/><circle cx="40" cy="37" r="2.4" fill="#d4a820"/><circle cx="11" cy="30" r="2.2" fill="#d4a820"/><circle cx="49" cy="30" r="2.2" fill="#d4a820"/><rect x="28.8" y="11" width="2.4" height="7" rx="1" fill="#d4a820"/><rect x="26" y="13.5" width="8" height="2.4" rx="1" fill="#d4a820"/></svg>Rosaire</span>${pillBtn}</div>
-  <div style="font-size:10px;color:var(--muted);margin-top:3px;">3 chapelets · 150 Ave Maria</div>
-  ${!isDone?`<div class="sub-pills">${stepPills}</div><div class="chap-progress">${count}/150 Ave Maria<div class="chap-bar-track"><div class="chap-bar-fill" style="width:${pct}%"></div></div></div>`
-  :`<div class="chap-progress" style="color:var(--done-text);">150/150 — Rosaire accompli 🌹</div>`}
-</div>`;}
+  const beads=ROS_STEPS.map((o,i)=>{
+    const stepDone=count>=o.v;
+    return `<div class="bead${stepDone?' done':''}" onclick="${stepDone?`revertRos(${o.v},'${key}')`:`addRosaire(${o.v},'${key}')`}">${i+1}</div>`;
+  }).join('');
+  const btnClass=isDone?'green':(inProg?'orange':'red');
+  const btnLabel=isDone?'Accompli ✓':(inProg?'En cours…':'Commencer');
+  const onclick=count>0?`undoRos('${key}')`:'';
+  return `<div class="tile${isDone?' done-tile':''}" id="sec-ros-${key}">
+    <div class="tile-label-h">${SVG_COURONNE}<span>Rosaire</span></div>
+    <div class="beads-row" style="gap:8px;">${beads}</div>
+    <button class="pill ${btnClass}" ${onclick?`onclick="${onclick}"`:''}>${btnLabel}</button>
+  </div>`;
+}
 
 /* ── CARD UTILS ── */
 function toggleCard(key){
@@ -817,12 +1002,10 @@ function openReader(key,type){
   document.getElementById('reader-label').textContent=isLecture?'Lectures du jour':'Homélie';
   document.getElementById('reader-date').textContent=DAYS[d.getDay()]+' '+day+' '+MONTHS_LONG[d.getMonth()];
   document.getElementById('reader-ref').textContent=r.epitre;
-  document.getElementById('reader-text').innerHTML=isLecture?r.text:(G.homélies[key]||r.homelie.replace(/\n/g,'</p><p>'));
+  document.getElementById('reader-text').innerHTML=isLecture?r.text:(G.homelies[key]||r.homelie.replace(/\n/g,'</p><p>'));
   const ds=G.days[key]||{};
   const isDone=isLecture?ds.lectures:ds.homelie;
-  const btn=document.getElementById('reader-done-btn');
-  btn.textContent=isDone?'✓ Déjà marqué comme lu':'J\'ai '+(isLecture?'lu':'médité')+' — marquer comme fait ✓';
-  btn.className='cta-btn'+(isDone?' done':'');
+  updateReaderButtons(isDone);
   document.getElementById('reader').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -830,24 +1013,58 @@ function closeReader(){
   document.getElementById('reader').classList.remove('open');
   document.body.style.overflow='';
 }
-function markReaderDone(){
+function updateReaderButtons(isDone){
+  const btnRead=document.getElementById('reader-btn-read');
+  const btnUnread=document.getElementById('reader-btn-unread');
+  if(!btnRead||!btnUnread)return;
+  if(isDone){
+    btnRead.className='reader-btn active-read';
+    btnUnread.className='reader-btn inactive';
+  } else {
+    btnRead.className='reader-btn inactive';
+    btnUnread.className='reader-btn active-unread';
+  }
+}
+function setReaderState(done){
   const ds=G.days[readerKey]||(G.days[readerKey]={});
+  if(readerType.startsWith('litanie:')){
+    const litId=readerType.split(':')[1];
+    if(!ds.litanies) ds.litanies={};
+    const wasDoneLit=!!ds.litanies[litId];
+    if(done&&!wasDoneLit){ds.litanies[litId]=true;addScore(10,'Litanie priée +10 pts');}
+    else if(!done&&wasDoneLit){delete ds.litanies[litId];G.score=Math.max(0,G.score-10);document.getElementById('hdr-score').textContent=G.score;}
+    updateReaderButtons(done); refreshCard(readerKey); return;
+  }
   const isLecture=readerType==='lecture';
-  if(isLecture&&!ds.lectures){ds.lectures=true;addScore(PTS.lecture,'Lecture lue +'+PTS.lecture+' pts');}
-  else if(!isLecture&&!ds.homelie){ds.homelie=true;addScore(PTS.homelie,'Homélie méditée +'+PTS.homelie+' pts');}
-  const btn=document.getElementById('reader-done-btn');
-  btn.textContent='✓ Marqué comme fait';btn.className='cta-btn done';
-  refreshCard(readerKey);
-  setTimeout(closeReader,700);
+  const wasDone=isLecture?ds.lectures:ds.homelie;
+  if(done && !wasDone){
+    if(isLecture){ds.lectures=true;addScore(PTS.lecture,'Lecture lue +'+PTS.lecture+' pts');}
+    else{ds.homelie=true;addScore(PTS.homelie,'Homélie méditée +'+PTS.homelie+' pts');}
+  } else if(!done && wasDone){
+    if(isLecture){ds.lectures=false;G.score=Math.max(0,G.score-PTS.lecture);document.getElementById('hdr-score').textContent=G.score;}
+    else{ds.homelie=false;G.score=Math.max(0,G.score-PTS.homelie);document.getElementById('hdr-score').textContent=G.score;}
+  }
+  updateReaderButtons(done); refreshCard(readerKey);
 }
 
 /* ── ACTIONS ── */
 function selAve(key,v){
-  G.days[key]._aveSel=v;
+  const ds=G.days[key];
+  if(ds.ave)return; // already validated, don't allow re-selecting
+  const current=ds._aveSel||0;
+  // toggle: clicking the same bead again deselects it
+  const newSel = (current===v) ? 0 : v;
+  ds._aveSel=newSel;
   const sec=document.getElementById('sec-ave-'+key);
-  if(sec)sec.querySelectorAll('.sub-pill').forEach((b,i)=>{b.classList.toggle('selected',AVE_OPTIONS[i].v===v);});
+  if(sec)sec.querySelectorAll('.bead').forEach((b,i)=>{b.classList.toggle('done',AVE_OPTIONS[i].v===newSel);});
   const btn=document.getElementById('btn-ave-'+key);
-  if(btn){btn.classList.remove('red');btn.classList.add('green','flipping');btn.textContent='Prier ✓';}
+  if(btn){
+    if(newSel>0){
+      btn.classList.remove('red');btn.classList.add('green','flipping');btn.textContent='Prier';
+    } else {
+      btn.classList.remove('green');btn.classList.add('red');btn.textContent='Prier';
+    }
+  }
 }
 function doAve(key){
   const ds=G.days[key];if(ds.ave)return;
@@ -892,7 +1109,7 @@ function renderContributeur(){
     const r=rd(d);
     const fkey=d.getDate()+''+(d.getMonth()+1);
     const feast=FEASTS[fkey]||MYSTERY_TYPES[d.getDay()]||'';
-    const txt=G.homélies[key]||'';
+    const txt=G.homelies[key]||'';
     const status=txt?'published':'empty';
     const statusLabel=txt?'✓ Publié':'À rédiger';
     const isPast=d<new Date(today.getFullYear(),today.getMonth(),today.getDate());
@@ -926,7 +1143,7 @@ function publishHomelie(key){
   const ta=document.getElementById('ta-'+key);
   const txt=(ta.value||'').trim();
   if(!txt){showToast('Veuillez saisir une homélie avant de publier');return;}
-  G.homélies[key]=txt;
+  G.homelies[key]=txt;
   const btn=document.getElementById('pub-'+key);
   btn.textContent='✓ Publié';btn.classList.add('done');
   showToast('🙏 Homélie publiée avec succès');
@@ -985,21 +1202,13 @@ buildFeed();
 document.getElementById('hdr-score').textContent=G.score;
 
 // Toggle lecture: green→red OR open reader
-function toggleLec(key){
-  const ds=G.days[key]||{};
-  if(ds.lectures){ ds.lectures=false; G.score=Math.max(0,G.score-PTS.lecture); document.getElementById('hdr-score').textContent=G.score; refreshCard(key); showToast('← Lecture annulée'); }
-  else { openReader(key,'lecture'); }
-}
+function toggleLec(key){ openReader(key,'lecture'); }
 // Toggle homélie
-function toggleHom(key){
-  const ds=G.days[key]||{};
-  if(ds.homelie){ ds.homelie=false; G.score=Math.max(0,G.score-PTS.homelie); document.getElementById('hdr-score').textContent=G.score; refreshCard(key); showToast('← Homélie annulée'); }
-  else { openReader(key,'homelie'); }
-}
+function toggleHom(key){ openReader(key,'homelie'); }
 // Cancel Ave
 function cancelAve(key){
   const ds=G.days[key];if(!ds||!ds.ave)return;
-  const n=ds._aveSel||1; ds.ave=false; G.totalAves=Math.max(0,G.totalAves-n);
+  const n=ds._aveSel||1; ds.ave=false; ds._aveSel=0; G.totalAves=Math.max(0,G.totalAves-n);
   G.score=Math.max(0,G.score-n*PTS.avePerAve); document.getElementById('hdr-score').textContent=G.score;
   refreshCard(key); showToast('← Ave Maria annulés');
 }
@@ -1090,8 +1299,8 @@ function renderAdmin(){
     </div>`).join('');
 
   // Homélies publiées
-  const homList=document.getElementById('admin-homélies-list');
-  const keys=Object.keys(G.homélies);
+  const homList=document.getElementById('admin-homelies-list');
+  const keys=Object.keys(G.homelies);
   if(keys.length===0){
     homList.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Aucune homélie publiée par les contributeurs.</div>';
     return;
@@ -1100,7 +1309,7 @@ function renderAdmin(){
     const [y,m,d]=key.split('-').map(Number);
     const date=new Date(y,m-1,d);
     const label=DAYS_FULL[date.getDay()]+' '+d+' '+['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'][m-1];
-    const text=G.homélies[key];
+    const text=G.homelies[key];
     return `<div class="homelie-admin-row">
       <div class="ha-date">${label}</div>
       <div class="ha-preview">${text.replace(/<[^>]+>/g,'').substring(0,100)}…</div>
@@ -1110,7 +1319,7 @@ function renderAdmin(){
 }
 
 function unpublishHomelie(key){
-  delete G.homélies[key];
+  delete G.homelies[key];
   renderAdmin();
   showToast('Homélie dépubliée');
 }
@@ -1168,6 +1377,39 @@ function revertRos(v, key){
   document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards();
   showToast('← Rosaire revenu à '+prev+' Ave');
+}
+
+
+function secLitanies(key, ds) {
+  if(!ds.litanies) ds.litanies={};
+  const cells = LITANIES.map(l => {
+    const done = !!ds.litanies[l.id];
+    const shortName = l.titre.replace('Litanies du ','').replace('Litanies de la ','').replace('Litanies des ','').replace('Litanies de ','');
+    return `<div class="lit-cell">
+      <span class="lit-cell-name">${l.icon||''}${shortName}</span>
+      <button class="pill${done?' green':' red'}" onclick="openLitanie('${key}','${l.id}')">${done?'Prié ✓':'Prier'}</button>
+    </div>`;
+  }).join('');
+  return `<div class="tile lit-tile-big" id="sec-lit-${key}">
+    <div class="tile-label-h">${SVG_LITANIE}<span>Litanies</span></div>
+    <div class="lit-grid">${cells}</div>
+  </div>`;
+}
+
+
+function openLitanie(key, litId) {
+  const lit = LITANIES.find(l=>l.id===litId);
+  if(!lit) return;
+  readerKey=key; readerType='litanie:'+litId;
+  document.getElementById('reader-label').textContent=lit.titre;
+  document.getElementById('reader-date').textContent=lit.source;
+  document.getElementById('reader-ref').textContent='';
+  document.getElementById('reader-text').innerHTML=lit.text;
+  const ds=G.days[key]||{};
+  if(!ds.litanies) ds.litanies={};
+  updateReaderButtons(!!ds.litanies[litId]);
+  document.getElementById('reader').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 
 </script>
