@@ -1,17 +1,17 @@
 {
   "name": "Ora et Labora",
   "short_name": "Ora et Labora",
-  "description": "Pri\u00e8re catholique quotidienne \u2014 rite de Saint Pie V",
-  "start_url": "./ora_v4.html",
+  "description": "Prière catholique quotidienne — rite de Saint Pie V",
+  "start_url": "./ora_v7.html",
   "display": "standalone",
-  "background_color": "#e8e8e4",
-  "theme_color": "#2a2a26",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzJhMmEyNiIvPjxyZWN0IHg9Ijc4IiB5PSIzMCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjEyMCIgcng9IjgiIGZpbGw9IiNlOGU4ZTQiLz48cmVjdCB4PSIzNiIgeT0iNjYiIHdpZHRoPSIxMDgiIGhlaWdodD0iMjQiIHJ4PSI4IiBmaWxsPSIjZThlOGU0Ii8+PC9zdmc+",
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAD0ElEQVR4nO3dXVKrUBCFUXCWOgnvUHQSOszcJy2N+QHOAZqdtd5DqPDRdlKVOA5FnF6fT3ufA23G989x93PY64kFnG+PwDd9QhE/rq3iXv1JRMy5NeNe7cBC5p41wu5+QCEzV8+wn3odaBjEzDI9u+lyZwiZXlqndfOEFjM9tfbUFLSYWUNLV4vGu5DZytwVZPaEFjNbmtvbrKDFzB7mdDc5aDGzp6n9df0cGvY2KWjTmQqmdHg3aDFTyb0ebwYtZiq61aUdmihXgzadqexanxeDFjNHcKlTKwdR/gRtOnMk572a0ET5FbTpzBH97NaEJoqgifIdtHWDI/vq14QmiqCJMg6DdaOrt4/5j/n30v88HpSge1kS8jlhN7Ny9NAj5p7HeWCCbtU7QlE3ebJuNFgrPlEvZkITRdBLrT1FTelFBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETZTxML8P7dc493eAf5lRP2gh11M47Norh5hrKnxd6gZd+EVjKHt9agZd9MXiTMHrVDNoWKhe0AXvem4odr3qBQ0NBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEqRd04W9DcEGx61UvaGhQM+hidz1XFLxONYMehpIvFj8UvT51gx6Gsi/awyt8Xer/jMGXYt+MeEiFQ/5ynKCr2eIGO0BA1dReOWAmQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBL/Xv5djHDyVoojyN75/j3idxWGtNUdN5MRO6Ve/4xNxE0D30ilDMzcZhGIbT6/Np7xOJ8fYx/zFC7uZ7fxY1Rze+f45WDqIImijfQfv4jiP76teEJoqgifIraGsHR/SzWxOaKH+CNqU5kvNeTWiiXAzalOYILnV6dUKLmsqu9WnlIMrNoE1pKrrV5d0JLWoqudfjpJVD1FQwpUM7NFEmB21Ks6ep/c2a0KJmD3O6m71yiJotze2tKU7fQ2QtSwdn05tC05o1tHTV/CmHqOmptaeuMVpBWKrXYOz6ObRpzRI9u1ktQNOae9YYgKtPVGFzbs2/5JuuCOJ+XFuto7vtvOLOt8d7qv990/K9RJGnBAAAAABJRU5ErkJggg==",
       "sizes": "180x180",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

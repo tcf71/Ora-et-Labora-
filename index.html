@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ora et Labora">
-<meta name="theme-color" content="#e8e8e4">
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzJhMmEyNiIvPjxyZWN0IHg9Ijc4IiB5PSIzMCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjEyMCIgcng9IjgiIGZpbGw9IiNlOGU4ZTQiLz48cmVjdCB4PSIzNiIgeT0iNjYiIHdpZHRoPSIxMDgiIGhlaWdodD0iMjQiIHJ4PSI4IiBmaWxsPSIjZThlOGU0Ii8+PC9zdmc+">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAD0ElEQVR4nO3dXVKrUBCFUXCWOgnvUHQSOszcJy2N+QHOAZqdtd5DqPDRdlKVOA5FnF6fT3ufA23G989x93PY64kFnG+PwDd9QhE/rq3iXv1JRMy5NeNe7cBC5p41wu5+QCEzV8+wn3odaBjEzDI9u+lyZwiZXlqndfOEFjM9tfbUFLSYWUNLV4vGu5DZytwVZPaEFjNbmtvbrKDFzB7mdDc5aDGzp6n9df0cGvY2KWjTmQqmdHg3aDFTyb0ebwYtZiq61aUdmihXgzadqexanxeDFjNHcKlTKwdR/gRtOnMk572a0ET5FbTpzBH97NaEJoqgifIdtHWDI/vq14QmiqCJMg6DdaOrt4/5j/n30v88HpSge1kS8jlhN7Ny9NAj5p7HeWCCbtU7QlE3ebJuNFgrPlEvZkITRdBLrT1FTelFBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETZTxML8P7dc493eAf5lRP2gh11M47Norh5hrKnxd6gZd+EVjKHt9agZd9MXiTMHrVDNoWKhe0AXvem4odr3qBQ0NBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEqRd04W9DcEGx61UvaGhQM+hidz1XFLxONYMehpIvFj8UvT51gx6Gsi/awyt8Xer/jMGXYt+MeEiFQ/5ynKCr2eIGO0BA1dReOWAmQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBL/Xv5djHDyVoojyN75/j3idxWGtNUdN5MRO6Ve/4xNxE0D30ilDMzcZhGIbT6/Np7xOJ8fYx/zFC7uZ7fxY1Rze+f45WDqIImijfQfv4jiP76teEJoqgifIraGsHR/SzWxOaKH+CNqU5kvNeTWiiXAzalOYILnV6dUKLmsqu9WnlIMrNoE1pKrrV5d0JLWoqudfjpJVD1FQwpUM7NFEmB21Ks6ep/c2a0KJmD3O6m71yiJotze2tKU7fQ2QtSwdn05tC05o1tHTV/CmHqOmptaeuMVpBWKrXYOz6ObRpzRI9u1ktQNOae9YYgKtPVGFzbs2/5JuuCOJ+XFuto7vtvOLOt8d7qv990/K9RJGnBAAAAABJRU5ErkJggg==">
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +25,7 @@
   --warm-yellow: #ffcc50; --warm-green: #2bba6e;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{background:linear-gradient(160deg,#fff8f0 0%,#ffede0 100%);background-attachment:fixed;min-height:100vh;font-family:-apple-system,'Segoe UI',sans-serif;color:var(--text);}
+html,body{background:#fff;min-height:100vh;font-family:-apple-system,'Segoe UI',sans-serif;color:var(--text);color-scheme:light;}
 
 /* PAGES */
 .page{display:none;min-height:100vh;padding-bottom:24px;}
@@ -33,8 +34,8 @@ html,body{background:linear-gradient(160deg,#fff8f0 0%,#ffede0 100%);background-
 /* GLOBAL HEADER */
 #global-hdr{
   position:sticky;top:0;z-index:50;
-  background:rgba(255,248,240,0.92);backdrop-filter:blur(16px);
-  border-bottom:1px solid rgba(255,180,120,0.3);
+  background:#fff;
+  border-bottom:1px solid rgba(255,180,120,0.25);
   padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;
 }
 .hdr-left{display:flex;align-items:center;gap:8px;}
@@ -49,7 +50,7 @@ html,body{background:linear-gradient(160deg,#fff8f0 0%,#ffede0 100%);background-
 
 /* FEED */
 #feed{padding:14px 14px 0;display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto;}
-.day-card{background:rgba(255,252,247,0.85);border:1px solid rgba(255,200,150,0.4);border-radius:24px;overflow:hidden;transition:border-color 0.3s;scroll-margin-top:60px;box-shadow:0 8px 32px rgba(220,120,60,0.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.day-card{background:#fff;border:1px solid rgba(255,200,150,0.35);border-radius:24px;overflow:hidden;transition:border-color 0.3s;scroll-margin-top:60px;box-shadow:0 6px 24px rgba(200,120,60,0.08);}
 .day-card.today{border-color:rgba(255,111,89,0.5);box-shadow:0 10px 40px rgba(255,111,89,0.18);}
 .day-card.complete{border-color:rgba(43,186,110,0.5);box-shadow:0 10px 40px rgba(43,186,110,0.15);}
 .day-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 9px;border-bottom:1px solid rgba(255,200,150,0.3);cursor:pointer;user-select:none;}
@@ -62,6 +63,8 @@ html,body{background:linear-gradient(160deg,#fff8f0 0%,#ffede0 100%);background-
 .dname{font-family:'EB Garamond',Georgia,serif;font-size:19px;font-weight:700;color:var(--text);font-variant:small-caps;}
 .day-card.today .dname{color:#c2380a;}
 .dfeast{font-size:13px;color:var(--muted);margin-top:1px;}
+.community-counter{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;font-weight:600;color:var(--done-text);}
+.community-dot{width:7px;height:7px;border-radius:50%;background:var(--done-border);flex-shrink:0;box-shadow:0 0 0 2px rgba(43,186,110,0.2);animation:pulse-dot 2s infinite;}
 .day-progress-dots{display:flex;gap:4px;}
 .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,111,89,0.5);transition:background 0.3s;}
 .dot.done{background:var(--done-border);}
@@ -171,6 +174,7 @@ html,body{background:linear-gradient(160deg,#fff8f0 0%,#ffede0 100%);background-
 .pill.orange:hover{box-shadow:0 6px 20px rgba(255,180,50,0.5);transform:translateY(-1px);}
 .pill.flipping{animation:flip 0.22s ease;}
 @keyframes flip{0%{transform:scale(1)}40%{transform:scale(0.88)}100%{transform:scale(1)}}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 2px rgba(43,186,110,0.2);}50%{box-shadow:0 0 0 5px rgba(43,186,110,0.08);}}
 .section.done-section{background:rgba(30,122,66,0.06);}
 .sub-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
 .sub-pill{padding:5px 11px;border-radius:999px;font-size:10px;font-weight:600;border:1.5px solid var(--border);color:var(--muted);background:transparent;cursor:pointer;transition:all 0.18s;}
@@ -1495,7 +1499,11 @@ function buildCard(d){
 <div class="day-hdr" onclick="toggleCard('${key}')">
   <div class="day-hdr-left">
     <div class="day-num-badge"><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>
-    <div><div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}</div><div class="dfeast">${feast}</div></div>
+    <div>
+      <div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}</div>
+      <div class="dfeast">${feast}</div>
+      ${isToday?`<div class="community-counter"><span class="community-dot"></span>1 247 fidèles prient aujourd'hui</div>`:''}
+    </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="day-progress-dots">${dots}</div>
