@@ -10,6 +10,12 @@
 <meta name="apple-mobile-web-app-title" content="Ora et Labora">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAD0ElEQVR4nO3dXVKrUBCFUXCWOgnvUHQSOszcJy2N+QHOAZqdtd5DqPDRdlKVOA5FnF6fT3ufA23G989x93PY64kFnG+PwDd9QhE/rq3iXv1JRMy5NeNe7cBC5p41wu5+QCEzV8+wn3odaBjEzDI9u+lyZwiZXlqndfOEFjM9tfbUFLSYWUNLV4vGu5DZytwVZPaEFjNbmtvbrKDFzB7mdDc5aDGzp6n9df0cGvY2KWjTmQqmdHg3aDFTyb0ebwYtZiq61aUdmihXgzadqexanxeDFjNHcKlTKwdR/gRtOnMk572a0ET5FbTpzBH97NaEJoqgifIdtHWDI/vq14QmiqCJMg6DdaOrt4/5j/n30v88HpSge1kS8jlhN7Ny9NAj5p7HeWCCbtU7QlE3ebJuNFgrPlEvZkITRdBLrT1FTelFBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETZTxML8P7dc493eAf5lRP2gh11M47Norh5hrKnxd6gZd+EVjKHt9agZd9MXiTMHrVDNoWKhe0AXvem4odr3qBQ0NBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEqRd04W9DcEGx61UvaGhQM+hidz1XFLxONYMehpIvFj8UvT51gx6Gsi/awyt8Xer/jMGXYt+MeEiFQ/5ynKCr2eIGO0BA1dReOWAmQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBE0XQRBE0UQRNFEETRdBEETRRBE0UQRNF0EQRNFEETRRBL/Xv5djHDyVoojyN75/j3idxWGtNUdN5MRO6Ve/4xNxE0D30ilDMzcZhGIbT6/Np7xOJ8fYx/zFC7uZ7fxY1Rze+f45WDqIImijfQfv4jiP76teEJoqgifIraGsHR/SzWxOaKH+CNqU5kvNeTWiiXAzalOYILnV6dUKLmsqu9WnlIMrNoE1pKrrV5d0JLWoqudfjpJVD1FQwpUM7NFEmB21Ks6ep/c2a0KJmD3O6m71yiJotze2tKU7fQ2QtSwdn05tC05o1tHTV/CmHqOmptaeuMVpBWKrXYOz6ObRpzRI9u1ktQNOae9YYgKtPVGFzbs2/5JuuCOJ+XFuto7vtvOLOt8d7qv990/K9RJGnBAAAAABJRU5ErkJggg==">
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://vksixhwjaqjxwfbmegea.supabase.co';
+const SUPA_KEY = 'sb_publishable_ZZpuaxbixFTcEpJLtSS8Xg_ZjF_3pvY';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -1383,14 +1389,59 @@ const LITURGY = {
   }
 };
 
+// ── MISSALE MEUM API ─────────────────────────
+const MISSALE_CACHE = {};
+
+async function fetchLiturgy(key) {
+  if (MISSALE_CACHE[key]) return MISSALE_CACHE[key];
+  // Check static LITURGY first (homélies rédigées par les contributeurs)
+  if (LITURGY[key]) { MISSALE_CACHE[key] = LITURGY[key]; return LITURGY[key]; }
+  try {
+    const res = await fetch(`https://www.missalemeum.com/fr/api/v5/propers/${key}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    // L'API retourne un tableau, on prend la célébration principale [0]
+    const obs = data[0];
+    const sections = obs.sections || [];
+    const get = (name) => {
+      const s = sections.find(s => s.id === name);
+      if (!s) return '';
+      return s.body.map(sub => sub.filter((_,i)=>i%2===0).join(' ')).join('\n');
+    };
+    const epitre_ref = sections.find(s=>s.id==='lectio')?.label || '';
+    const epitre_text = get('lectio');
+    const evangile_ref = sections.find(s=>s.id==='evangelium')?.label || '';
+    const evangile_text = get('evangelium');
+    const result = {
+      feast: obs.title || '',
+      ref: `${epitre_ref} · ${evangile_ref}`,
+      epitre: `${epitre_ref} · ${evangile_ref}`,
+      text: `<h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--accent);">${epitre_ref}</h3><p>${epitre_text.replace(/\n/g,'</p><p>')}</p><h3 style="font-size:15px;font-weight:700;margin:18px 0 12px;color:var(--accent);">${evangile_ref}</h3><p>${evangile_text.replace(/\n/g,'</p><p>')}</p>`,
+      homelie: LITURGY[key]?.homelie || ''
+    };
+    MISSALE_CACHE[key] = result;
+    return result;
+  } catch(e) {
+    // Fallback sur table statique
+    const [y,m,d] = key.split('-').map(Number);
+    const date = new Date(y,m-1,d);
+    const idx = (date.getDate() + date.getMonth()*3) % READINGS.length;
+    const r = READINGS[idx];
+    return { feast:'', ref:r.ref, epitre:r.ref, text:r.text, homelie:r.homelie };
+  }
+}
+
 function getLiturgy(key) {
+  if (MISSALE_CACHE[key]) return MISSALE_CACHE[key];
   if (LITURGY[key]) return LITURGY[key];
   const [y,m,d] = key.split('-').map(Number);
   const date = new Date(y,m-1,d);
   const idx = (date.getDate() + date.getMonth()*3) % READINGS.length;
   const r = READINGS[idx];
-  return { feast:'', ref:r.ref, epitre:r.epitre, text:r.text, homelie:r.homelie };
+  return { feast:'', ref:r.ref, epitre:r.ref, text:r.text, homelie:r.homelie };
 }
+// ── END MISSALE MEUM API ─────────────────────
+
 
 
 
@@ -1466,6 +1517,7 @@ function addScore(pts,msg){
   updateLevel();
   document.getElementById('hdr-score').textContent=G.score;
   if(msg)showToast(msg);
+  saveTodayActivity();
 }
 function updateLevel(){
   let lvl=1;
@@ -1491,7 +1543,7 @@ function buildCard(d){
   const key=dk(d);if(!G.days[key])G.days[key]={};
   const ds=G.days[key];const r=getLiturgy(key);const isToday=key===dk(today);const dow=d.getDay();
   const fkey=d.getDate()+''+(d.getMonth()+1);
-  const feast=r.feast||(FEASTS[fkey]||MYSTERY_TYPES[dow]||'');
+  const feast=(MISSALE_CACHE[key]?.feast)||r.feast||(FEASTS[fkey]||MYSTERY_TYPES[dow]||'');
   const chapS=chapState();const rosS=rosState();
   if(!ds.litanies) ds.litanies={};
   const litS=Object.values(ds.litanies).some(v=>v===true);
@@ -1509,7 +1561,7 @@ function buildCard(d){
     <div>
       <div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}</div>
       <div class="dfeast">${feast}</div>
-      ${isToday?`<div class="community-counter"><span class="community-dot"></span>1 247 fidèles prient aujourd'hui</div>`:''}
+      ${isToday?`<div class="community-counter"><span class="community-dot"></span><span id="community-count">1 247 fidèles prient aujourd'hui</span></div>`:''}
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
@@ -1611,21 +1663,24 @@ function refreshAllCards(){
 
 /* ── READER ── */
 let readerKey='',readerType='';
-function openReader(key,type){
+async function openReader(key,type){
   const [y,m,day]=key.split('-').map(Number);
   const d=new Date(y,m-1,day);
-  const r=getLiturgy(key);
   readerKey=key;readerType=type;
   const isLecture=type==='lecture';
   document.getElementById('reader-label').textContent=isLecture?'Lectures du jour':'Méditation';
   document.getElementById('reader-date').textContent=DAYS[d.getDay()]+' '+day+' '+MONTHS_LONG[d.getMonth()];
-  document.getElementById('reader-ref').textContent=r.epitre;
-  document.getElementById('reader-text').innerHTML=isLecture?r.text:(G.homelies[key]||r.homelie.replace(/\n/g,'</p><p>'));
+  document.getElementById('reader-ref').textContent='Chargement…';
+  document.getElementById('reader-text').innerHTML='<p style="color:var(--muted);text-align:center;padding:20px;">🕯️</p>';
+  document.getElementById('reader').classList.add('open');
+  document.body.style.overflow='hidden';
   const ds=G.days[key]||{};
   const isDone=isLecture?ds.lectures:ds.homelie;
   updateReaderButtons(isDone);
-  document.getElementById('reader').classList.add('open');
-  document.body.style.overflow='hidden';
+  // Fetch async
+  const r = await fetchLiturgy(key);
+  document.getElementById('reader-ref').textContent=r.epitre||r.ref||'';
+  document.getElementById('reader-text').innerHTML=isLecture?r.text:(G.homelies[key]||r.homelie||'<p style="color:var(--muted);">Méditation à venir.</p>');
 }
 function closeReader(){
   document.getElementById('reader').classList.remove('open');
@@ -1878,33 +1933,150 @@ function goAuthScreen(screen){
   if(screen==='signup')document.getElementById('onboarding').classList.add('open');
 }
 
-function doLogin(){
+async function doLogin(){
   const email=document.getElementById('login-email').value.trim();
   const mdp=document.getElementById('login-mdp').value;
   if(!email||!mdp){showToast('Veuillez remplir tous les champs');return;}
-  // Pas de backend pour l'instant — simulation : on accepte la connexion
-  // et on restaure le profil existant s'il correspond, sinon on crée une session simple
-  G.profile.email=email;
-  G.profile.onboarded=true;
+  showToast('Connexion…');
+  const {data,error}=await supa.auth.signInWithPassword({email,password:mdp});
+  if(error){showToast('Erreur : '+error.message);return;}
+  await loadUserData(data.user);
   document.getElementById('login-screen').classList.remove('open');
   goPage('prieres');
   renderCompte();
-  showToast(' Connexion réussie');
+  showToast('Connexion réussie');
 }
 
-function finishOnboarding(){
+async function finishOnboarding(){
   const email=document.getElementById('onb-email').value.trim();
   const mdp=document.getElementById('onb-mdp').value;
   if(!email||!mdp){showToast('Email et mot de passe requis');return;}
-  G.profile.prenom=document.getElementById('onb-prenom').value.trim()||G.profile.prenom;
-  G.profile.nom=document.getElementById('onb-nom').value.trim()||G.profile.nom;
+  const prenom=document.getElementById('onb-prenom').value.trim()||'';
+  showToast('Création du compte…');
+  const {data,error}=await supa.auth.signUp({
+    email, password:mdp,
+    options:{data:{prenom}}
+  });
+  if(error){showToast('Erreur : '+error.message);return;}
+  G.profile.prenom=prenom;
+  G.profile.nom=document.getElementById('onb-nom').value.trim()||'';
   G.profile.email=email;
-  G.profile.mdp=mdp;
   G.profile.onboarded=true;
+  if(data.user) await saveProfile(data.user.id);
   document.getElementById('onboarding').classList.remove('open');
   goPage('prieres');
   renderCompte();
+  showToast('Bienvenue '+prenom+' !');
 }
+
+// ── SUPABASE DATA FUNCTIONS ──────────────────────────
+
+async function loadUserData(user){
+  G.profile.email = user.email;
+  G.profile.onboarded = true;
+  // Load profile
+  const {data:profile} = await supa.from('profiles').select('*').eq('id',user.id).single();
+  if(profile){
+    G.profile.prenom = profile.prenom || '';
+    G.score = profile.score || 0;
+    G.level = profile.level || 0;
+    document.getElementById('hdr-score').textContent = G.score;
+  }
+  // Load today's activity
+  await loadTodayActivity(user.id);
+  // Fetch community counter
+  await fetchDailyCounter();
+  // Subscribe to realtime counter updates
+  subscribeToCounter();
+}
+
+async function saveProfile(userId){
+  await supa.from('profiles').upsert({
+    id: userId,
+    prenom: G.profile.prenom,
+    score: G.score,
+    level: G.level
+  });
+}
+
+async function saveScore(){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  await supa.from('profiles').update({score:G.score, level:G.level}).eq('id',user.id);
+}
+
+async function loadTodayActivity(userId){
+  const today = dk(new Date());
+  const {data} = await supa.from('daily_activity').select('*').eq('user_id',userId).eq('date',today).single();
+  if(data){
+    if(!G.days[today]) G.days[today]={};
+    G.days[today].lectures = data.lectures;
+    G.days[today].homelie  = data.homelie;
+    G.days[today]._aveSel  = data.ave_count;
+    G.days[today].ave      = data.ave_count > 0;
+    G.chapeletCount        = data.chapelet_count;
+    G.rosaryCount          = data.rosaire_count;
+    G.days[today].litanies = data.litanies || {};
+    renderFeed();
+  }
+}
+
+async function saveTodayActivity(){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  const today = dk(new Date());
+  const ds = G.days[today] || {};
+  await supa.from('daily_activity').upsert({
+    user_id:       user.id,
+    date:          today,
+    lectures:      ds.lectures || false,
+    homelie:       ds.homelie  || false,
+    ave_count:     ds._aveSel  || 0,
+    chapelet_count:G.chapeletCount || 0,
+    rosaire_count: G.rosaryCount   || 0,
+    litanies:      ds.litanies    || {},
+    updated_at:    new Date().toISOString()
+  },{onConflict:'user_id,date'});
+  await saveScore();
+}
+
+async function fetchDailyCounter(){
+  const today = dk(new Date());
+  const {data} = await supa.from('daily_counter').select('count').eq('date',today).single();
+  if(data){
+    const el = document.getElementById('community-count');
+    if(el) el.textContent = data.count.toLocaleString('fr-FR') + ' fidèles prient aujourd\'hui';
+  }
+}
+
+function subscribeToCounter(){
+  supa.channel('daily_counter')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'daily_counter'},
+      payload => {
+        const el = document.getElementById('community-count');
+        if(el) el.textContent = payload.new.count.toLocaleString('fr-FR') + ' fidèles prient aujourd\'hui';
+      })
+    .subscribe();
+}
+
+// Prefetch aujourd'hui au chargement
+(async () => {
+  const todayKey = dk(new Date());
+  const r = await fetchLiturgy(todayKey);
+  if (r.feast) renderFeed();
+})();
+
+// Check session on load
+supa.auth.getSession().then(({data:{session}})=>{
+  if(session){
+    loadUserData(session.user).then(()=>{
+      document.getElementById('auth-choice').classList.remove('open');
+      goPage('prieres');
+    });
+  }
+});
+
+// ── END SUPABASE DATA FUNCTIONS ──────────────────────
 
 document.getElementById('onb-mode-simple').onclick=function(){
   document.getElementById('onb-mode-simple').classList.add('active');
