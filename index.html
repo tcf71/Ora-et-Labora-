@@ -1451,18 +1451,13 @@ const ROS_STEPS=[{v:50,l:'1×'},{v:100,l:'2×'},{v:150,l:'3×'}];
 const PTS={lecture:14,homelie:21,avePerAve:1,chapPerDizaine:10,chapFirst:16,chapTotal:56,rosPerChapelet:85,rosTotal:255,litSacreCoeur:15,litSaints:15,litVierge:15,litJoseph:15,dayEmpty:-50,dayPartial:-10};
 
 let G={
-  score:0,xp:0,level:1,streak:3,
-  totalAves:147,totalChapelets:6,totalRosaries:1,perfectDays:8,
-  chapeletCount:20,rosaryCount:0,
-  profile:{prenom:'',nom:'',email:'',mdp:'',role:'',onboarded:false},
+  score:0,xp:0,level:1,streak:0,
+  totalAves:0,totalChapelets:0,totalRosaries:0,perfectDays:0,
+  chapeletCount:0,rosaryCount:0,
+  profile:{prenom:'',nom:'',email:'',role:'',onboarded:false},
   days:{},
-  homelies:{} // key=dateStr, value=text
+  homelies:{}
 };
-
-// Demo: logged in as contributeur (jour=lundi=1)
-G.profile.role='contributeur';
-G.profile.dow=1; // ce prêtre = lundi
-G.profile.prenom='Père Martin';
 
 const today=new Date();
 function dk(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
