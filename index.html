@@ -1400,6 +1400,8 @@ const LITURGY = {
   }
 };
 
+const renderFeed = () => buildFeed();
+
 // ── MISSALE MEUM API ─────────────────────────
 const MISSALE_CACHE = {};
 
@@ -2001,6 +2003,8 @@ async function loadUserData(user){
   }
   // Load today's activity
   await loadTodayActivity(user.id);
+  // Re-render feed with loaded data
+  renderFeed();
   // Fetch community counter
   await fetchDailyCounter();
   // Subscribe to realtime counter updates
@@ -2027,14 +2031,14 @@ async function loadTodayActivity(userId){
   const {data} = await supa.from('daily_activity').select('*').eq('user_id',userId).eq('date',today).single();
   if(data){
     if(!G.days[today]) G.days[today]={};
-    G.days[today].lectures = data.lectures;
-    G.days[today].homelie  = data.homelie;
-    G.days[today]._aveSel  = data.ave_count;
-    G.days[today].ave      = data.ave_count > 0;
-    G.chapeletCount        = data.chapelet_count;
-    G.rosaryCount          = data.rosaire_count;
-    G.days[today].litanies = data.litanies || {};
-    renderFeed();
+    const ds = G.days[today];
+    ds.lectures        = data.lectures || false;
+    ds.homelie         = data.homelie  || false;
+    ds._aveSel         = data.ave_count || 0;
+    ds.ave             = data.ave_count > 0;
+    G.chapeletCount    = data.chapelet_count || 0;
+    G.rosaryCount      = data.rosaire_count  || 0;
+    ds.litanies        = data.litanies || {};
   }
 }
 
@@ -2042,19 +2046,24 @@ async function saveTodayActivity(){
   const {data:{user}} = await supa.auth.getUser();
   if(!user) return;
   const today = dk(new Date());
-  const ds = G.days[today] || {};
-  await supa.from('daily_activity').upsert({
-    user_id:       user.id,
-    date:          today,
-    lectures:      ds.lectures || false,
-    homelie:       ds.homelie  || false,
-    ave_count:     ds._aveSel  || 0,
-    chapelet_count:G.chapeletCount || 0,
-    rosaire_count: G.rosaryCount   || 0,
-    litanies:      ds.litanies    || {},
-    updated_at:    new Date().toISOString()
-  },{onConflict:'user_id,date'});
-  await saveScore();
+  if(!G.days[today]) G.days[today]={};
+  const ds = G.days[today];
+  try {
+    await supa.from('daily_activity').upsert({
+      user_id:        user.id,
+      date:           today,
+      lectures:       ds.lectures       || false,
+      homelie:        ds.homelie        || false,
+      ave_count:      ds._aveSel        || 0,
+      chapelet_count: G.chapeletCount   || 0,
+      rosaire_count:  G.rosaryCount     || 0,
+      litanies:       ds.litanies       || {},
+      updated_at:     new Date().toISOString()
+    },{onConflict:'user_id,date'});
+    await saveScore();
+  } catch(e) {
+    console.error('saveTodayActivity error:', e);
+  }
 }
 
 async function fetchDailyCounter(){
@@ -2083,13 +2092,25 @@ function subscribeToCounter(){
   if (r.feast) renderFeed();
 })();
 
-// Check session on load
+// Check session on load — recharge l'état à chaque ouverture
 supa.auth.getSession().then(({data:{session}})=>{
   if(session){
     loadUserData(session.user).then(()=>{
       document.getElementById('auth-choice').classList.remove('open');
       goPage('prieres');
+      renderCompte();
     });
+  }
+});
+
+// Écoute les changements d'état auth (reconnexion automatique)
+supa.auth.onAuthStateChange((event, session) => {
+  if(event === 'SIGNED_IN' && session) {
+    loadUserData(session.user);
+  } else if(event === 'SIGNED_OUT') {
+    G.days = {}; G.score = 0;
+    document.getElementById('hdr-score').textContent = '0';
+    renderFeed();
   }
 });
 
@@ -2156,6 +2177,7 @@ function cancelAve(key){
   const n=ds._aveSel||1; ds.ave=false; ds._aveSel=0; G.totalAves=Math.max(0,G.totalAves-n);
   G.score=Math.max(0,G.score-n*PTS.avePerAve); document.getElementById('hdr-score').textContent=G.score;
   refreshCard(key); showToast('← Ave Maria annulés');
+  saveTodayActivity();
 }
 // Undo chapelet one step
 function undoChap(key){
@@ -2312,6 +2334,7 @@ function revertChap(v, key){
   document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards();
   showToast('← Chapelet revenu à '+prev+' Ave');
+  saveTodayActivity();
 }
 function revertRos(v, key){
   if(G.rosaryCount<=0||G.rosaryCount<v)return;
