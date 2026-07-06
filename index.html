@@ -711,10 +711,9 @@ textarea.homelie-input:focus{border-color:var(--accent);}
   <div class="compte-body">
     <div class="compte-section">
       <div class="compte-section-title">Mes informations</div>
-      <div class="field-row"><div class="field-label">Prénom</div><input class="field-input" id="f-prenom" type="text" placeholder="Votre prénom" oninput="saveProfile()"></div>
-      <div class="field-row"><div class="field-label">Nom</div><input class="field-input" id="f-nom" type="text" placeholder="Votre nom" oninput="saveProfile()"></div>
-      <div class="field-row"><div class="field-label">Adresse e-mail</div><input class="field-input" id="f-email" type="email" placeholder="votre@email.com" oninput="saveProfile()"></div>
-      <button class="cta-btn" onclick="saveProfile();showToast('✓ Profil enregistré')">Enregistrer</button>
+      <div class="field-row"><div class="field-label">Prénom</div><input class="field-input" id="f-prenom" type="text" placeholder="Votre prénom" readonly></div>
+      <div class="field-row"><div class="field-label">Nom</div><input class="field-input" id="f-nom" type="text" placeholder="Votre nom" readonly></div>
+      <div class="field-row"><div class="field-label">Adresse e-mail</div><input class="field-input" id="f-email" type="email" placeholder="votre@email.com" readonly></div>
       <button class="cta-btn outline" style="margin-top:8px;" onclick="openPwdModal()">Changer mon mot de passe</button>
     </div>
     <div class="compte-section" id="pwd-modal-section" style="display:none;">
@@ -1922,7 +1921,6 @@ function showAvatarPhoto(dataUrl){
 
 // Init
 const todayKey=dk(today);
-G.days[todayKey]={lectures:true};
 buildFeed();
 document.getElementById('hdr-score').textContent=G.score;
 
