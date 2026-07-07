@@ -540,11 +540,11 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 
     <div class="onb-field-row">
       <div class="onb-field-label">Email</div>
-      <input class="onb-field-input" id="login-email" type="email" placeholder="jean.martin@email.fr">
+      <input class="onb-field-input" id="login-email" type="email" placeholder="jean.martin@email.fr" autocomplete="email">
     </div>
     <div class="onb-field-row">
       <div class="onb-field-label">Mot de passe</div>
-      <input class="onb-field-input" id="login-mdp" type="password" placeholder="••••••••">
+      <input class="onb-field-input" id="login-mdp" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
 
     <button class="onb-cta-btn" onclick="doLogin()">Se connecter </button>
@@ -572,11 +572,11 @@ textarea.homelie-input:focus{border-color:var(--accent);}
     </div>
     <div class="onb-field-row">
       <div class="onb-field-label">Email</div>
-      <input class="onb-field-input" id="onb-email" type="email" placeholder="jean.martin@email.fr">
+      <input class="onb-field-input" id="onb-email" type="email" autocomplete="email" placeholder="jean.martin@email.fr">
     </div>
     <div class="onb-field-row">
       <div class="onb-field-label">Mot de passe</div>
-      <input class="onb-field-input" id="onb-mdp" type="password" placeholder="••••••••">
+      <input class="onb-field-input" id="onb-mdp" type="password" autocomplete="new-password" placeholder="••••••••">
     </div>
 
     <div class="onb-divider"></div>
@@ -1896,8 +1896,11 @@ function renderCompte(){
     {l:'✨ 5 jours parfaits',e:G.perfectDays>=5},{l:'🕊 30 jours',e:G.streak>=30},
   ];
   document.getElementById('c-badges').innerHTML=BADGES.map(b=>`<span class="badge${b.e?' earned':''}">${b.l}</span>`).join('');
-  // Accès contributeur
-  document.getElementById('contrib-access').style.display=p.role==='contributeur'?'block':'none';
+  // Accès contributeur / admin
+  const role = G.profile.role || '';
+  document.getElementById('contrib-access').style.display = (role==='contributeur') ? 'block' : 'none';
+  document.getElementById('admin-access').style.display = (role==='admin') ? 'block' : 'none';
+  document.getElementById('secret-access').style.display = (role===''||role==='user') ? 'block' : 'none';
 }
 
 /* ── DON ── */
@@ -2002,6 +2005,10 @@ async function loadUserData(user){
   try {
     G.profile.email = user.email;
     G.profile.onboarded = true;
+    // Auto-assign admin role for owner
+    if(user.email === 't@cdf.io') {
+      G.profile.role = 'admin';
+    }
     // Load profile
     const {data:profile} = await supa.from('profiles').select('*').eq('id',user.id).single();
     if(profile){
