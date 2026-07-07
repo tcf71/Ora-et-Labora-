@@ -1716,7 +1716,10 @@ async function openReader(key,type){
   // Fetch async
   const r = await fetchLiturgy(key);
   document.getElementById('reader-ref').textContent=r.epitre||r.ref||'';
-  document.getElementById('reader-text').innerHTML=isLecture?r.text:(G.homelies[key]||r.homelie||'<p style="color:var(--muted);">Méditation à venir.</p>');
+  const homText = G.homelies[key] || r.homelie || '';
+  const formattedHom = homText.includes('<p') ? homText :
+    '<p>' + homText.split(/\n\n+/).map(p => p.replace(/\n/g,' ').trim()).filter(Boolean).join('</p><p>') + '</p>';
+  document.getElementById('reader-text').innerHTML = isLecture ? r.text : (formattedHom || '<p style="color:var(--muted);">Méditation à venir.</p>');
 }
 function closeReader(){
   document.getElementById('reader').classList.remove('open');
@@ -1815,7 +1818,7 @@ function renderContributeur(){
   const d=new Date(today);
   // rewind to find first occurrence
   for(let i=0;i<37;i++){
-    const dd=new Date(today);dd.setDate(today.getDate()+i-3);
+    const dd=new Date(today);dd.setDate(today.getDate()+i-(isAdmin?0:3));
     if(isAdmin || dd.getDay()===dow) dates.push(new Date(dd));
   }
   const shown=isAdmin ? dates.slice(0,10) : dates.slice(0,5);
