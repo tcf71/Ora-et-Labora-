@@ -695,6 +695,22 @@ textarea.homelie-input:focus{border-color:var(--accent);}
   <div id="feed"></div>
 </div>
 
+<!-- RESET MOT DE PASSE -->
+<div id="reset-password-screen" class="onb-overlay">
+  <div class="onb-screen" style="display:flex;flex-direction:column;justify-content:center;min-height:100vh;">
+    <div class="onb-cross" style="font-size:28px;margin-bottom:16px;">+</div>
+    <div class="onb-title-main">Nouveau mot de passe</div>
+    <div class="onb-title-sub" style="margin-bottom:28px;">Choisissez un nouveau mot de passe sécurisé.</div>
+    <div class="field-row"><div class="field-label">NOUVEAU MOT DE PASSE</div>
+      <input class="onb-field-input" id="reset-mdp" type="password" placeholder="••••••••" autocomplete="new-password">
+    </div>
+    <div class="field-row"><div class="field-label">CONFIRMER</div>
+      <input class="onb-field-input" id="reset-mdp2" type="password" placeholder="••••••••" autocomplete="new-password">
+    </div>
+    <button class="onb-cta-btn" onclick="doResetPassword()">Enregistrer →</button>
+  </div>
+</div>
+
 <!-- PAGE MON COMPTE -->
 <div class="page" id="page-compte">
   <div class="compte-hero">
@@ -1966,6 +1982,23 @@ async function doLogout(){
   showToast('Déconnexion réussie');
 }
 
+async function doResetPassword(){
+  const mdp = document.getElementById('reset-mdp').value;
+  const mdp2 = document.getElementById('reset-mdp2').value;
+  if(!mdp || mdp.length < 6){ showToast('Mot de passe trop court (6 caractères min)'); return; }
+  if(mdp !== mdp2){ showToast('Les mots de passe ne correspondent pas'); return; }
+  const {error} = await supa.auth.updateUser({password: mdp});
+  if(error){ showToast('Erreur : ' + error.message); return; }
+  document.getElementById('reset-password-screen').classList.remove('open');
+  showToast('Mot de passe mis à jour !');
+  // Recharger la session
+  const {data:{session}} = await supa.auth.getSession();
+  if(session){
+    await loadUserData(session.user);
+    goPage('prieres');
+  }
+}
+
 async function doForgotPassword(){
   const email = document.getElementById('login-email').value.trim();
   if(!email){ showToast('Entrez votre email d\'abord'); return; }
@@ -2120,7 +2153,11 @@ function subscribeToCounter(){
     .subscribe();
 }
 
-// Prefetch les 7 jours immédiatement, re-render dès que les fêtes arrivent
+// Gérer le reset de mot de passe via le lien email
+if(window.location.hash.includes('access_token') && window.location.hash.includes('type=recovery')) {
+  document.querySelectorAll('.onb-overlay').forEach(el => el.classList.remove('open'));
+  document.getElementById('reset-password-screen').classList.add('open');
+}
 (async () => {
   try {
     const today = new Date();
