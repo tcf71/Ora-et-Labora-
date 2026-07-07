@@ -280,9 +280,17 @@ html,body{background:#ffffff;min-height:100vh;font-family:-apple-system,'Segoe U
 .ref-block strong{color:var(--text);}
 textarea.homelie-input{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:16px;color:var(--text);outline:none;resize:vertical;min-height:120px;line-height:1.6;font-family:inherit;transition:border-color 0.2s;}
 textarea.homelie-input:focus{border-color:var(--accent);}
-.pub-btn{padding:8px 18px;border-radius:999px;font-size:11px;font-weight:600;border:1.5px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;transition:all 0.2s;margin-top:8px;}
-.pub-btn:hover{filter:brightness(1.15);}
-.pub-btn.done{background:var(--done-bg);border-color:var(--done-border);color:var(--done-text);pointer-events:none;}
+.contrib-btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+.cb{padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;border:none;}
+.cb-save{background:linear-gradient(135deg,#ffb088,#ff8a6f);color:#fff;}
+.cb-save:hover{filter:brightness(1.1);}
+.cb-clear{background:rgba(200,100,50,0.1);color:#c2780f;border:1.5px solid rgba(200,100,50,0.3);}
+.cb-clear:hover{background:rgba(200,100,50,0.2);}
+.cb-publish{background:linear-gradient(135deg,#4cde9a,#2bba6e);color:#fff;}
+.cb-publish:hover{filter:brightness(1.1);}
+.cb-unpublish{background:rgba(200,50,50,0.1);color:#c2380a;border:1.5px solid rgba(200,50,50,0.25);}
+.cb-unpublish:hover{background:rgba(200,50,50,0.2);}
+.pub-btn{display:none;}
 
 /* ── PAGE SOUTENIR ── */
 .soutenir-body{padding:16px 14px 0;max-width:480px;margin:0 auto;}
@@ -1847,28 +1855,37 @@ function renderContributeur(){
   <strong>${r.epitre}</strong><br>
   <em style="font-size:10px;">${r.text.replace(/<[^>]+>/g,'').substring(0,120)}…</em>
 </div>
-<textarea class="homelie-input" id="ta-${key}" placeholder="Rédigez ou collez votre homélie ici…" rows="6">${txt}</textarea>
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-  <button class="pub-btn${txt?' done':''}" id="pub-${key}" onclick="publishHomelie('${key}')">
-    ${txt?'✓ Publié':'Publier'}
-  </button>
-  <span style="font-size:10px;color:var(--muted);">Publication immédiate · visible par tous les fidèles</span>
-</div>`;
+<textarea class="homelie-input" id="ta-${key}" placeholder="Rédigez ou collez votre méditation ici…" rows="6">${G.drafts?.[key]||txt}</textarea>
+<div class="contrib-btns">
+  <button class="cb cb-save" onclick="saveDraft('${key}')">Sauvegarder</button>
+  <button class="cb cb-clear" onclick="clearHomelie('${key}')">Effacer</button>
+  ${!txt ? `<button class="cb cb-publish" onclick="publishHomelie('${key}')">Publier</button>` : `<button class="cb cb-unpublish" onclick="unpublishHomelie('${key}')">Dépublier</button>`}
+</div>
+<div id="hint-${key}" style="font-size:10px;color:var(--muted);margin-top:6px;">${txt?'✓ Publiée · visible par tous':G.drafts?.[key]?'Brouillon sauvegardé':'Non publiée'}</div>`;
     list.appendChild(div);
   });
 }
 
+// Brouillons en mémoire (pas encore publiés)
+if(!G.drafts) G.drafts = {};
+
+function saveDraft(key){
+  const ta = document.getElementById('ta-'+key);
+  const txt = (ta.value||'').trim();
+  if(!txt){ showToast('Rien à sauvegarder'); return; }
+  G.drafts[key] = txt;
+  document.getElementById('hint-'+key).textContent = 'Brouillon sauvegardé ✓';
+  showToast('Brouillon sauvegardé');
+}
+
 function publishHomelie(key){
-  const ta=document.getElementById('ta-'+key);
-  const txt=(ta.value||'').trim();
-  if(!txt){showToast('Veuillez saisir une homélie avant de publier');return;}
-  G.homelies[key]=txt;
-  const btn=document.getElementById('pub-'+key);
-  btn.textContent='✓ Publié';btn.classList.add('done');
-  showToast('🙏 Méditation publiée avec succès');
-  // update status pill
-  const pill=btn.closest('.contrib-day').querySelector('.status-pill');
-  if(pill){pill.className='status-pill published';pill.textContent='✓ Publié';}
+  const ta = document.getElementById('ta-'+key);
+  const txt = (ta?.value||G.drafts?.[key]||'').trim();
+  if(!txt){ showToast('Rien à publier — rédigez ou sauvegardez d\'abord'); return; }
+  G.homelies[key] = txt;
+  delete G.drafts[key];
+  showToast('🙏 Méditation publiée · visible par tous');
+  renderContributeur();
 }
 
 /* ── MON COMPTE ── */
@@ -2379,6 +2396,14 @@ function renderAdmin(){
       <button class="unpub-btn" onclick="unpublishHomelie('${key}')">Dépublier</button>
     </div>`;
   }).join('');
+}
+
+function clearHomelie(key){
+  if(!confirm('Effacer le contenu et le brouillon ?')) return;
+  delete G.homelies[key];
+  if(G.drafts) delete G.drafts[key];
+  showToast('Contenu effacé');
+  renderContributeur();
 }
 
 function unpublishHomelie(key){
