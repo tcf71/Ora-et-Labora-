@@ -1991,24 +1991,30 @@ async function finishOnboarding(){
 // ── SUPABASE DATA FUNCTIONS ──────────────────────────
 
 async function loadUserData(user){
-  G.profile.email = user.email;
-  G.profile.onboarded = true;
-  // Load profile
-  const {data:profile} = await supa.from('profiles').select('*').eq('id',user.id).single();
-  if(profile){
-    G.profile.prenom = profile.prenom || '';
-    G.score = profile.score || 0;
-    G.level = profile.level || 0;
-    document.getElementById('hdr-score').textContent = G.score;
+  try {
+    G.profile.email = user.email;
+    G.profile.onboarded = true;
+    // Load profile
+    const {data:profile} = await supa.from('profiles').select('*').eq('id',user.id).single();
+    if(profile){
+      G.profile.prenom = profile.prenom || '';
+      G.score = profile.score || 0;
+      G.level = profile.level || 0;
+      document.getElementById('hdr-score').textContent = G.score;
+    }
+    // Load today's activity
+    await loadTodayActivity(user.id);
+    // Re-render feed with loaded data
+    renderFeed();
+    // Fetch community counter (non-blocking)
+    fetchDailyCounter().catch(()=>{});
+    // Subscribe to realtime counter updates
+    subscribeToCounter();
+  } catch(e) {
+    console.error('loadUserData error:', e);
+    // Rendre l'app utilisable même si le chargement échoue
+    renderFeed();
   }
-  // Load today's activity
-  await loadTodayActivity(user.id);
-  // Re-render feed with loaded data
-  renderFeed();
-  // Fetch community counter
-  await fetchDailyCounter();
-  // Subscribe to realtime counter updates
-  subscribeToCounter();
 }
 
 async function saveProfile(userId){
@@ -2085,17 +2091,19 @@ function subscribeToCounter(){
     .subscribe();
 }
 
-// Prefetch les 7 prochains jours au chargement pour afficher les vraies fêtes
-(async () => {
-  const promises = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - 3 + i); // 3 jours avant + 3 jours après
-    promises.push(fetchLiturgy(dk(d)));
-  }
-  await Promise.all(promises);
-  renderFeed(); // re-render avec les vraies fêtes
-})();
+// Prefetch les 7 prochains jours en arrière-plan (non bloquant)
+setTimeout(async () => {
+  try {
+    const promises = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - 3 + i);
+      promises.push(fetchLiturgy(dk(d)).catch(()=>{}));
+    }
+    await Promise.all(promises);
+    renderFeed();
+  } catch(e) { /* silencieux */ }
+}, 1500);
 
 // Check session on load — recharge l'état à chaque ouverture
 supa.auth.getSession().then(({data:{session}})=>{
@@ -2104,16 +2112,21 @@ supa.auth.getSession().then(({data:{session}})=>{
       document.getElementById('auth-choice').classList.remove('open');
       goPage('prieres');
       renderCompte();
+    }).catch(e=>{
+      console.error('loadUserData error:', e);
+      showToast('Erreur de chargement — réessayez');
     });
   }
+}).catch(e=>{
+  console.error('getSession error:', e);
 });
 
-// Écoute les changements d'état auth (reconnexion automatique)
+// Écoute uniquement la déconnexion
 supa.auth.onAuthStateChange((event, session) => {
-  if(event === 'SIGNED_IN' && session) {
-    loadUserData(session.user);
-  } else if(event === 'SIGNED_OUT') {
+  if(event === 'SIGNED_OUT') {
     G.days = {}; G.score = 0;
+    G.chapeletCount = 0; G.rosaryCount = 0;
+    G.profile = {prenom:'',nom:'',email:'',role:'',onboarded:false};
     document.getElementById('hdr-score').textContent = '0';
     renderFeed();
   }
