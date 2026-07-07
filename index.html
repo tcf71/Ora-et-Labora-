@@ -1442,19 +1442,22 @@ async function fetchLiturgy(key) {
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
     // L'API retourne un tableau, on prend la célébration principale [0]
-    const obs = data[0];
+    const obs = Array.isArray(data) ? data[0] : data;
+    if (!obs) throw new Error('No data');
     const sections = obs.sections || [];
     const get = (name) => {
       const s = sections.find(s => s.id === name);
       if (!s) return '';
-      return s.body.map(sub => sub.filter((_,i)=>i%2===0).join(' ')).join('\n');
+      return s.body.map(sub => Array.isArray(sub) ? sub.filter((_,i)=>i%2===0).join(' ') : sub).join('\n');
     };
     const epitre_ref = sections.find(s=>s.id==='lectio')?.label || '';
     const epitre_text = get('lectio');
     const evangile_ref = sections.find(s=>s.id==='evangelium')?.label || '';
     const evangile_text = get('evangelium');
+    // Fête : titre de l'observance, ou description du jour liturgique
+    const feast = obs.title || obs.description || obs.id?.split(':')[1]?.replace(/-/g,' ') || '';
     const result = {
-      feast: obs.title || '',
+      feast,
       ref: `${epitre_ref} · ${evangile_ref}`,
       epitre: `${epitre_ref} · ${evangile_ref}`,
       text: `<h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--accent);">${epitre_ref}</h3><p>${epitre_text.replace(/\n/g,'</p><p>')}</p><h3 style="font-size:15px;font-weight:700;margin:18px 0 12px;color:var(--accent);">${evangile_ref}</h3><p>${evangile_text.replace(/\n/g,'</p><p>')}</p>`,
@@ -1586,7 +1589,7 @@ function buildCard(d){
     fetchLiturgy(key).then(r => {
       if (r.feast) renderFeed();
     }).catch(()=>{});
-    feast = '⏳'; // chargement en cours
+    feast = ''; // chargement en cours
   }
   const chapS=chapState();const rosS=rosState();
   if(!ds.litanies) ds.litanies={};
@@ -1869,21 +1872,23 @@ function renderContributeur(){
 // Brouillons en mémoire (pas encore publiés)
 if(!G.drafts) G.drafts = {};
 
-function saveDraft(key){
+async function saveDraft(key){
   const ta = document.getElementById('ta-'+key);
   const txt = (ta.value||'').trim();
   if(!txt){ showToast('Rien à sauvegarder'); return; }
   G.drafts[key] = txt;
+  await saveHomelieToSupabase(key, txt, false);
   document.getElementById('hint-'+key).textContent = 'Brouillon sauvegardé ✓';
   showToast('Brouillon sauvegardé');
 }
 
-function publishHomelie(key){
+async function publishHomelie(key){
   const ta = document.getElementById('ta-'+key);
   const txt = (ta?.value||G.drafts?.[key]||'').trim();
   if(!txt){ showToast('Rien à publier — rédigez ou sauvegardez d\'abord'); return; }
   G.homelies[key] = txt;
   delete G.drafts[key];
+  await saveHomelieToSupabase(key, txt, true);
   showToast('🙏 Méditation publiée · visible par tous');
   renderContributeur();
 }
@@ -2089,6 +2094,8 @@ async function loadUserData(user){
     }
     // Load today's activity
     await loadTodayActivity(user.id);
+    // Load published homélies
+    await loadHomelies();
     // Re-render feed with loaded data
     renderFeed();
     // Fetch community counter (non-blocking)
@@ -2131,6 +2138,33 @@ async function loadTodayActivity(userId){
     G.rosaryCount      = data.rosaire_count  || 0;
     ds.litanies        = data.litanies || {};
   }
+}
+
+async function loadHomelies(){
+  try {
+    // Charger toutes les homélies (publiées ET brouillons) pour l'admin/contributeur
+    const {data:{user}} = await supa.auth.getUser();
+    if(!user) return;
+    const {data} = await supa.from('homelies').select('date,content,published');
+    if(data) data.forEach(h => {
+      if(h.published) G.homelies[h.date] = h.content;
+      else { if(!G.drafts) G.drafts={}; G.drafts[h.date] = h.content; }
+    });
+  } catch(e) { console.error('loadHomelies error:', e); }
+}
+
+async function saveHomelieToSupabase(key, content, published){
+  try {
+    const {data:{user}} = await supa.auth.getUser();
+    if(!user) return;
+    await supa.from('homelies').upsert({
+      date: key,
+      content,
+      published,
+      author_id: user.id,
+      updated_at: new Date().toISOString()
+    }, {onConflict:'date'});
+  } catch(e) { console.error('saveHomelie error:', e); }
 }
 
 async function saveTodayActivity(){
@@ -2401,12 +2435,15 @@ function clearHomelie(key){
   if(!confirm('Effacer le contenu et le brouillon ?')) return;
   delete G.homelies[key];
   if(G.drafts) delete G.drafts[key];
+  // Supprimer de Supabase
+  supa.from('homelies').delete().eq('date', key).then(()=>{});
   showToast('Contenu effacé');
   renderContributeur();
 }
 
-function unpublishHomelie(key){
+async function unpublishHomelie(key){
   delete G.homelies[key];
+  await saveHomelieToSupabase(key, G.drafts?.[key]||'', false);
   renderAdmin();
   showToast('Méditation dépubliée');
 }
