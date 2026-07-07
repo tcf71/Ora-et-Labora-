@@ -777,8 +777,9 @@ textarea.homelie-input:focus{border-color:var(--accent);}
     <!-- Espace admin — visible uniquement si role=admin -->
     <div class="compte-section" id="admin-access" style="display:none;">
       <div class="compte-section-title">⚙️ Administration</div>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Gérez les contributeurs et les homélies publiées.</p>
-      <button class="cta-btn" onclick="goPage('admin')">Accéder au panneau admin →</button>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Gérez les contributeurs et les méditations publiées.</p>
+      <button class="cta-btn" onclick="goPage('admin')">Panneau admin →</button>
+      <button class="cta-btn outline" onclick="goPage('contributeur')" style="margin-top:8px;">Rédiger une méditation →</button>
     </div>
     <div style="height:8px;"></div>
     <div class="compte-section" style="text-align:center;">
@@ -1801,21 +1802,23 @@ function addRosaire(v,key){
 
 /* ── CONTRIBUTEUR ── */
 function renderContributeur(){
-  const dow=G.profile.dow; // jour de la semaine de ce prêtre
+  const isAdmin = G.profile.role === 'admin';
+  const dow = isAdmin ? -1 : (G.profile.dow || 0);
   const list=document.getElementById('contrib-list');
   list.innerHTML='';
   document.getElementById('contrib-subtitle').textContent=
-    (G.profile.prenom||'Contributeur')+' · Homélies des '+['dimanches','lundis','mardis','mercredis','jeudis','vendredis','samedis'][dow]+' sur 30 jours';
+    isAdmin ? 'Admin · Toutes les méditations sur 30 jours' :
+    (G.profile.prenom||'Contributeur')+' · Méditations des '+['dimanches','lundis','mardis','mercredis','jeudis','vendredis','samedis'][dow]+' sur 30 jours';
 
-  // Générer les dates correspondant à ce dow sur les 30 prochains jours
+  // Générer les dates : admin = tous les jours, contributeur = son jour de la semaine
   const dates=[];
   const d=new Date(today);
   // rewind to find first occurrence
   for(let i=0;i<37;i++){
     const dd=new Date(today);dd.setDate(today.getDate()+i-3);
-    if(dd.getDay()===dow)dates.push(new Date(dd));
+    if(isAdmin || dd.getDay()===dow) dates.push(new Date(dd));
   }
-  const shown=dates.slice(0,5);
+  const shown=isAdmin ? dates.slice(0,10) : dates.slice(0,5);
 
   shown.forEach(d=>{
     const key=dk(d);
@@ -1920,6 +1923,8 @@ function renderCompte(){
   document.getElementById('contrib-access').style.display = (role==='contributeur') ? 'block' : 'none';
   document.getElementById('admin-access').style.display = (role==='admin') ? 'block' : 'none';
   document.getElementById('secret-access').style.display = (role===''||role==='user') ? 'block' : 'none';
+  // L'admin a aussi accès à l'espace contributeur
+  if(role==='admin') G.profile.dow = G.profile.dow || new Date().getDay();
 }
 
 /* ── DON ── */
@@ -2003,9 +2008,8 @@ async function doForgotPassword(){
   const email = document.getElementById('login-email').value.trim();
   if(!email){ showToast('Entrez votre email d\'abord'); return; }
   showToast('Envoi en cours…');
-  const {error} = await supa.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://ora-et-labora-theta.vercel.app'
-  });
+  const redirectTo = window.location.origin + window.location.pathname;
+  const {error} = await supa.auth.resetPasswordForEmail(email, { redirectTo });
   if(error){ showToast('Erreur : ' + error.message); return; }
   showToast('Email envoyé ! Vérifiez votre boîte mail.');
 }
