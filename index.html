@@ -1551,7 +1551,15 @@ function buildCard(d){
   const key=dk(d);if(!G.days[key])G.days[key]={};
   const ds=G.days[key];const r=getLiturgy(key);const isToday=key===dk(today);const dow=d.getDay();
   const fkey=d.getDate()+''+(d.getMonth()+1);
-  const feast=(MISSALE_CACHE[key]?.feast)||r.feast||(FEASTS[fkey]||MYSTERY_TYPES[dow]||'');
+  // Fête : cache Missale Meum en priorité, sinon FEASTS local, sinon charge en async
+  let feast = (MISSALE_CACHE[key]?.feast) || FEASTS[fkey] || '';
+  if (!feast) {
+    // Pas encore chargé — on lance le fetch et on re-render quand c'est prêt
+    fetchLiturgy(key).then(r => {
+      if (r.feast) renderFeed();
+    }).catch(()=>{});
+    feast = MYSTERY_TYPES[dow] || ''; // fallback temporaire
+  }
   const chapS=chapState();const rosS=rosState();
   if(!ds.litanies) ds.litanies={};
   const litS=Object.values(ds.litanies).some(v=>v===true);
@@ -2091,19 +2099,22 @@ function subscribeToCounter(){
     .subscribe();
 }
 
-// Prefetch les 7 prochains jours en arrière-plan (non bloquant)
-setTimeout(async () => {
+// Prefetch les 7 jours immédiatement, re-render dès que les fêtes arrivent
+(async () => {
   try {
-    const promises = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - 3 + i);
-      promises.push(fetchLiturgy(dk(d)).catch(()=>{}));
+    const today = new Date();
+    const keys = [];
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      keys.push(dk(d));
     }
-    await Promise.all(promises);
-    renderFeed();
+    // Charger chaque jour et re-render dès que c'est prêt
+    await Promise.all(keys.map(key =>
+      fetchLiturgy(key).then(()=>renderFeed()).catch(()=>{})
+    ));
   } catch(e) { /* silencieux */ }
-}, 1500);
+})();
 
 // Check session on load — recharge l'état à chaque ouverture
 supa.auth.getSession().then(({data:{session}})=>{
@@ -2221,7 +2232,7 @@ function undoRos(key){
 
 /* ── SECRET ACCESS ── */
 // Codes définis ici — à changer avant prod
-const ADMIN_CODE = 'ORA-ADMIN-2026';
+const ADMIN_CODE = 'ad_min';
 const CONTRIB_CODES = {
   'PIERRE-LUNDI':   {name:'Père Pierre', dow:1},
   'MARTIN-MARDI':   {name:'Père Martin', dow:2},
