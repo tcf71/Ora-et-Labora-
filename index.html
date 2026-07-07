@@ -548,6 +548,9 @@ textarea.homelie-input:focus{border-color:var(--accent);}
     </div>
 
     <button class="onb-cta-btn" onclick="doLogin()">Se connecter </button>
+    <div style="text-align:center;margin-top:12px;">
+      <span onclick="doForgotPassword()" style="font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer;">Mot de passe oublié ?</span>
+    </div>
     <div class="onb-cta-skip" onclick="goAuthScreen('choice')">← Retour</div>
   </div>
 </div>
@@ -1961,6 +1964,17 @@ async function doLogout(){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('auth-choice').classList.add('open');
   showToast('Déconnexion réussie');
+}
+
+async function doForgotPassword(){
+  const email = document.getElementById('login-email').value.trim();
+  if(!email){ showToast('Entrez votre email d\'abord'); return; }
+  showToast('Envoi en cours…');
+  const {error} = await supa.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://ora-et-labora-theta.vercel.app'
+  });
+  if(error){ showToast('Erreur : ' + error.message); return; }
+  showToast('Email envoyé ! Vérifiez votre boîte mail.');
 }
 
 async function doLogin(){
