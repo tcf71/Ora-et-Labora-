@@ -1794,7 +1794,7 @@ function renderContributeur(){
     const key=dk(d);
     const r=rd(d);
     const fkey=d.getDate()+''+(d.getMonth()+1);
-    const feast=FEASTS[fkey]||MYSTERY_TYPES[d.getDay()]||'';
+    const feast=(MISSALE_CACHE[key]?.feast)||FEASTS[fkey]||MYSTERY_TYPES[d.getDay()]||'';
     const txt=G.homelies[key]||'';
     const status=txt?'published':'empty';
     const statusLabel=txt?'✓ Publié':'À rédiger';
@@ -2085,11 +2085,16 @@ function subscribeToCounter(){
     .subscribe();
 }
 
-// Prefetch aujourd'hui au chargement
+// Prefetch les 7 prochains jours au chargement pour afficher les vraies fêtes
 (async () => {
-  const todayKey = dk(new Date());
-  const r = await fetchLiturgy(todayKey);
-  if (r.feast) renderFeed();
+  const promises = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - 3 + i); // 3 jours avant + 3 jours après
+    promises.push(fetchLiturgy(dk(d)));
+  }
+  await Promise.all(promises);
+  renderFeed(); // re-render avec les vraies fêtes
 })();
 
 // Check session on load — recharge l'état à chaque ouverture
