@@ -1586,7 +1586,7 @@ function buildCard(d){
     fetchLiturgy(key).then(r => {
       if (r.feast) renderFeed();
     }).catch(()=>{});
-    feast = MYSTERY_TYPES[dow] || ''; // fallback temporaire
+    feast = '⏳'; // chargement en cours
   }
   const chapS=chapState();const rosS=rosState();
   if(!ds.litanies) ds.litanies={};
@@ -1835,7 +1835,7 @@ function renderContributeur(){
     const key=dk(d);
     const r=rd(d);
     const fkey=d.getDate()+''+(d.getMonth()+1);
-    const feast=(MISSALE_CACHE[key]?.feast)||FEASTS[fkey]||MYSTERY_TYPES[d.getDay()]||'';
+    const feast=(MISSALE_CACHE[key]?.feast)||FEASTS[fkey]||'';
     const txt=G.homelies[key]||'';
     const status=txt?'published':'empty';
     const statusLabel=txt?'✓ Publié':'À rédiger';
@@ -1976,9 +1976,8 @@ function showAvatarPhoto(dataUrl){
   document.getElementById('c-avatar-placeholder').style.display='none';
 }
 
-// Init
+// Init — le buildFeed sera appelé après le chargement des fêtes liturgiques
 const todayKey=dk(today);
-buildFeed();
 document.getElementById('hdr-score').textContent=G.score;
 
 /* ── ONBOARDING LOGIC ── */
@@ -2182,20 +2181,20 @@ if(window.location.hash.includes('access_token') && window.location.hash.include
   document.querySelectorAll('.onb-overlay').forEach(el => el.classList.remove('open'));
   document.getElementById('reset-password-screen').classList.add('open');
 }
+// Charger les fêtes liturgiques AVANT le premier rendu
 (async () => {
   try {
-    const today = new Date();
+    const t = new Date();
     const keys = [];
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(today);
+    for (let i = -1; i < 10; i++) {
+      const d = new Date(t);
       d.setDate(d.getDate() + i);
       keys.push(dk(d));
     }
-    // Charger chaque jour et re-render dès que c'est prêt
-    await Promise.all(keys.map(key =>
-      fetchLiturgy(key).then(()=>renderFeed()).catch(()=>{})
-    ));
-  } catch(e) { /* silencieux */ }
+    // Attendre que tous les jours soient chargés PUIS re-render
+    await Promise.all(keys.map(k => fetchLiturgy(k).catch(()=>{})));
+    buildFeed(); // re-render avec les vraies fêtes
+  } catch(e) {}
 })();
 
 // Check session on load — recharge l'état à chaque ouverture
