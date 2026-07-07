@@ -1432,31 +1432,59 @@ const renderFeed = () => buildFeed();
 
 // ── MISSALE MEUM API ─────────────────────────
 const MISSALE_CACHE = {};
+const CALENDAR_CACHE = {};
+
+async function fetchCalendarMonth(yearMonth) {
+  if (CALENDAR_CACHE[yearMonth]) return CALENDAR_CACHE[yearMonth];
+  try {
+    const res = await fetch(`https://www.missalemeum.com/fr/api/v5/calendar/${yearMonth}`);
+    if (!res.ok) return {};
+    const data = await res.json();
+    CALENDAR_CACHE[yearMonth] = data;
+    return data;
+  } catch(e) { return {}; }
+}
 
 async function fetchLiturgy(key) {
   if (MISSALE_CACHE[key]) return MISSALE_CACHE[key];
   if (LITURGY[key]) { MISSALE_CACHE[key] = LITURGY[key]; return LITURGY[key]; }
   try {
-    const res = await fetch(`https://www.missalemeum.com/fr/api/v5/propers/${key}`);
-    if (!res.ok) throw new Error('API error');
-    const data = await res.json();
-    const obs = Array.isArray(data) ? data[0] : data;
-    if (!obs) throw new Error('No data');
-    console.log('Missale API obs keys:', Object.keys(obs));
-    console.log('obs.title:', obs.title);
-    console.log('obs.celebration:', obs.celebration);
-    const sections = obs.sections || [];
-    const get = (name) => {
-      const sec = sections.find(s => s.id === name);
-      if (!sec) return '';
-      return sec.body.map(sub => Array.isArray(sub) ? sub.filter((_,i)=>i%2===0).join(' ') : String(sub)).join('\n');
-    };
-    const epitre_ref = sections.find(s=>s.id==='lectio')?.label || '';
-    const epitre_text = get('lectio');
-    const evangile_ref = sections.find(s=>s.id==='evangelium')?.label || '';
-    const evangile_text = get('evangelium');
-    // Fête : essayer plusieurs champs dans l'ordre
-    const feast = obs.title || obs.celebration?.[0]?.title || obs.description || '';
+    // Charger en parallèle : propres (lectures) + calendrier (fête)
+    const yearMonth = key.substring(0,7);
+    const [propRes, cal] = await Promise.all([
+      fetch(`https://www.missalemeum.com/fr/api/v5/propers/${key}`),
+      fetchCalendarMonth(yearMonth)
+    ]);
+    
+    // Extraire la fête depuis le calendrier
+    let feast = '';
+    const day = cal[key];
+    if (day) {
+      const cel = day.celebration?.[0] || day.tempora?.[0];
+      feast = cel?.title || '';
+    }
+
+    // Extraire les lectures depuis les propres
+    let epitre_ref='', epitre_text='', evangile_ref='', evangile_text='';
+    if (propRes.ok) {
+      const data = await propRes.json();
+      const obs = Array.isArray(data) ? data[0] : data;
+      if (obs) {
+        const sections = obs.sections || [];
+        const get = (name) => {
+          const sec = sections.find(s => s.id === name);
+          if (!sec) return '';
+          return sec.body.map(sub => Array.isArray(sub) ? sub.filter((_,i)=>i%2===0).join(' ') : String(sub)).join('\n');
+        };
+        epitre_ref = sections.find(s=>s.id==='lectio')?.label || '';
+        epitre_text = get('lectio');
+        evangile_ref = sections.find(s=>s.id==='evangelium')?.label || '';
+        evangile_text = get('evangelium');
+        // Fallback fête depuis propres si calendrier n'a rien donné
+        if (!feast) feast = obs.title || obs.description || '';
+      }
+    }
+
     const result = {
       feast,
       ref: `${epitre_ref} · ${evangile_ref}`,
@@ -1465,18 +1493,6 @@ async function fetchLiturgy(key) {
       homelie: LITURGY[key]?.homelie || ''
     };
     MISSALE_CACHE[key] = result;
-    // Si pas de fête, essayer l'endpoint calendar
-    if (!feast) {
-      fetch(`https://www.missalemeum.com/fr/api/v5/calendar/${key.substring(0,4)}`)
-        .then(r=>r.json())
-        .then(cal=>{
-          const day = cal?.find?.(d=>d.date===key) || Object.values(cal||{}).find(d=>d.date===key);
-          if(day?.celebration?.[0]?.title) {
-            MISSALE_CACHE[key].feast = day.celebration[0].title;
-            buildFeed();
-          }
-        }).catch(()=>{});
-    }
     return result;
   } catch(e) {
     const [y,m,d] = key.split('-').map(Number);
