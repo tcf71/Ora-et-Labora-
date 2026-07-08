@@ -1123,7 +1123,7 @@ function renderLadder(){
   const html=[...LEVELS].reverse().map((lvl,revI)=>{
     const i=LEVELS.length-1-revI;
     const side=i%2===0?'left':'right';
-    const state=i<currentIdx?'done':(i===currentIdx?'current':'locked');
+    const state=i>currentIdx?'locked':(i===currentIdx?'current':'done');
     const voieHtml=lvl.voie?`<div class="voie-label">${lvl.voie}</div>`:'';
     return `${voieHtml}<div class="rung ${state} ${side}">
       <div class="rung-card">
