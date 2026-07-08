@@ -1096,9 +1096,19 @@ const LEVELS=[
    icon:'<svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="14" r="3.5" fill="currentColor"/></svg>'},
 ];
 
-function openLadder(){
-  // S'assurer que le score affiché est bien le score courant
-  document.getElementById('ladder-score').textContent = G.score;
+async function openLadder(){
+  // Recharger le score depuis Supabase avant d'afficher
+  try {
+    const {data:{user}} = await supa.auth.getUser();
+    if(user){
+      const {data:profile} = await supa.from('profiles').select('score,level').eq('id',user.id).single();
+      if(profile){
+        G.score = profile.score || 0;
+        G.level = profile.level || 0;
+        document.getElementById('hdr-score').textContent = G.score;
+      }
+    }
+  } catch(e) {}
   renderLadder();
   document.getElementById('ladder-overlay').classList.add('open');
 }
@@ -1433,8 +1443,8 @@ const LITURGY = {
   '2026-7-6': { feast:'Férie — Lundi du VIe Dimanche', ref:'Rm 6, 3-11 · Mc 8, 1-9', epitre:'Férie · Rm 6, 3-11 — Mc 8, 1-9', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Épître · Rm 6, 3-11</h3><p>Frères, nous tous qui avons été baptisés dans le Christ Jésus, c'est dans sa mort que nous avons été baptisés. Regardez-vous comme morts au péché, mais vivants pour Dieu dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mc 8, 1-9</h3><p>En ce temps-là, Jésus dit : <em>« J'ai compassion de cette foule. »</em> Il prit les sept pains, rendit grâces et les distribua.</p>`, homelie:'' },
   '2026-7-7': { feast:'Sts Cyrille et Méthode, Évêques et Confesseurs — IIIe classe', ref:'He 7, 23-27 · Mt 5, 13-19', epitre:'IIIe classe · He 7, 23-27 — Mt 5, 13-19', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Introït</h3><p><em>Os justi meditabitur sapientiam — La bouche du juste méditera la sagesse.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Épître · He 7, 23-27</h3><p>Frères, les anciens prêtres étaient nombreux parce que la mort les empêchait de durer ; mais lui, parce qu'il demeure éternellement, possède un sacerdoce qui ne passe pas. De là vient qu'il peut sauver de façon définitive ceux qui s'approchent de Dieu par lui, étant toujours vivant pour intercéder en leur faveur. C'est bien un tel Grand Prêtre qu'il nous fallait : saint, innocent, sans tache, séparé des pécheurs.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mt 5, 13-19</h3><p>En ce temps-là, Jésus dit à ses disciples : <em>« Vous êtes le sel de la terre. Vous êtes la lumière du monde. Que votre lumière brille ainsi devant les hommes, afin qu'ils voient vos bonnes œuvres et glorifient votre Père qui est dans les cieux. »</em></p>`, homelie:'' },
   '2026-7-8': { feast:'Ste Élisabeth du Portugal, Reine et Veuve — IIIe classe', ref:'Prov 31, 10-31 · Mt 13, 44-52', epitre:'IIIe classe · Prov 31, 10-31 — Mt 13, 44-52', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Introït</h3><p><em>Dilexisti justitiam — Tu as aimé la justice et haï l'iniquité ; c'est pourquoi Dieu, ton Dieu, t'a ointe de l'huile de l'allégresse.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Épître · Prov 31, 10-31</h3><p>Qui trouvera une femme forte ? C'est au loin et aux extrémités du monde qu'on doit chercher son prix. Le cœur de son mari se confie en elle, et il ne manquera point de dépouilles. Elle lui rendra le bien, et non le mal, tous les jours de sa vie. Elle a cherché la laine et le lin, et elle a travaillé avec des mains ingénieuses. Elle est comme le vaisseau d'un marchand, qui apporte son pain de loin. Elle se lève lorsqu'il est encore nuit, et elle donne la nourriture à ses domestiques, et les vivres à ses servantes. Elle a considéré un champ, et elle l'a acheté ; du fruit de ses mains elle a planté une vigne. Elle a ceint ses reins de force, et elle a affermi son bras. Elle a goûté, et elle a vu que son trafic est bon ; sa lampe ne s'éteindra point pendant la nuit. Elle a porté sa main à des choses fortes, et ses doigts ont saisi le fuseau. Elle a ouvert sa main à l'indigent, et elle a étendu ses bras vers le pauvre. Elle ne craindra point pour sa maison le froid de la neige, car tous ses domestiques ont un double vêtement. Elle s'est fait une tenture de tapisserie ; le fin lin et la pourpre sont son vêtement. Son mari est honoré aux portes de la ville, lorsqu'il siège avec les anciens du pays. Elle a fait une tunique de lin et elle l'a vendue, et elle a livré une ceinture au Chananéen. Elle est revêtue de force et de beauté, et elle rira au dernier jour. Elle a ouvert sa bouche à la sagesse, et la loi de la clémence est sur sa langue. Elle a considéré les sentiers de sa maison, et elle n'a pas mangé son pain dans l'oisiveté. Ses fils se sont levés, et l'ont proclamée bienheureuse ; son mari s'est levé aussi, et l'a louée. Beaucoup de filles ont amassé des richesses ; toi, tu les as toutes surpassées. La grâce est trompeuse, et la beauté est vaine ; la femme qui craint le Seigneur est celle qui sera louée. Donnez-lui du fruit de ses mains, et que ses œuvres la louent aux portes de la ville.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mt 13, 44-52</h3><p>En ce temps-là, Jésus dit à ses disciples cette parabole : <em>« Le Royaume des Cieux est comparable à un trésor caché dans un champ. Quand un homme le trouve, il le cache, puis, dans sa joie, il s'en va, il vend tout ce qu'il possède, et il achète ce champ. Ou encore : Le Royaume des Cieux est comparable à un marchand qui cherche de belles perles. Ayant trouvé une perle de grand prix, il s'en va vendre tout ce qu'il possède, et il l'achète. Encore : Le Royaume des Cieux est comparable à un filet qu'on jette dans la mer et qui ramasse des poissons de toutes sortes. Quand il est plein, on le tire sur le rivage, on s'assied, on ramasse dans des paniers ce qui est bon, et on rejette ce qui ne vaut rien. Ainsi en sera-t-il à la fin du monde : les anges sortiront et sépareront les mauvais d'avec les justes, et ils les jetteront dans la fournaise ardente : là seront les pleurs et les grincements de dents. Avez-vous compris tout cela ? »</em> Ils lui répondirent : <em>« Oui. »</em> Et il leur dit : <em>« C'est pourquoi tout scribe instruit du Royaume des Cieux est comparable à un père de famille qui tire de son trésor des choses nouvelles et des choses anciennes. »</em></p>`, homelie:'' },
-    '2026-7-9': { feast:'Férie du VIe Dimanche après la Pentecôte', ref:'Rm 6, 3-11 · Mc 8, 1-9', epitre:'Férie · Rm 6, 3-11 — Mc 8, 1-9', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Épître · Rm 6, 3-11</h3><p>Frères, nous tous qui avons été baptisés dans le Christ Jésus, c'est dans sa mort que nous avons été baptisés. Nous vivons dans une vie nouvelle. Regardez-vous comme morts au péché, mais vivants pour Dieu dans le Christ Jésus.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mc 8, 1-9</h3><p>En ce temps-là, Jésus dit : <em>« J'ai compassion de cette foule. »</em> Il prit les sept pains, rendit grâces et les distribua. Ils furent tous rassasiés.</p>`, homelie:'' },
-  '2026-7-10': { feast:'Sept Saints Frères, Sts Rufine et Seconde — IIIe classe', ref:'Rm 6, 3-11 · Mc 8, 1-9', epitre:'Férie · Rm 6, 3-11 — Mc 8, 1-9', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Épître · Rm 6, 3-11</h3><p>Frères, regardez-vous comme morts au péché, mais vivants pour Dieu dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mc 8, 1-9</h3><p>En ce temps-là, Jésus dit : <em>« J'ai compassion de cette foule. »</em> Il prit les sept pains, les bénit et les distribua.</p>`, homelie:'' },
+    '2026-7-9': { feast:'Férie du VIe Dimanche après la Pentecôte', ref:'Rm 6, 3-11 · Mc 8, 1-9', epitre:'Férie · Rm 6, 3-11 — Mc 8, 1-9', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Introït · Ps 27</h3><p><em>Dominus fortitudo plebis suae — Le Seigneur est la force de son peuple et le protecteur de son Christ. Sauvez votre peuple, Seigneur, et bénissez votre héritage, et gouvernez-les dans les siècles des siècles.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Épître · Rm 6, 3-11</h3><p>Mes Frères : nous tous qui avons été baptisés en Jésus-Christ, c'est en sa mort que nous avons été baptisés. Nous avons donc été ensevelis avec lui par le baptême en sa mort, afin que, comme le Christ est ressuscité des morts par la gloire du Père, nous aussi nous marchions dans une vie nouvelle. Si en effet nous avons été greffés sur lui par une mort semblable à la sienne, nous le serons aussi par une résurrection semblable à la sienne. Sachons-le : notre vieil homme a été crucifié avec lui, afin que le corps du péché soit détruit, et que nous ne soyons plus esclaves du péché. Car celui qui est mort est affranchi du péché. Or, si nous sommes morts avec le Christ, nous croyons que nous vivrons aussi avec lui, sachant que le Christ, une fois ressuscité des morts, ne meurt plus, et que la mort n'a plus de pouvoir sur lui. Car lui, il est mort, il est mort au péché une fois pour toutes ; lui, il vit, il vit pour Dieu. Ainsi vous aussi, regardez-vous comme morts au péché, mais vivants pour Dieu dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Graduel · Ps 33</h3><p><em>Timete Dominum, omnes sancti ejus — Craignez le Seigneur, vous tous ses saints, car rien ne manque à ceux qui le craignent. Les riches ont été dans la misère et ont souffert la faim ; mais ceux qui cherchent le Seigneur ne seront privés d'aucun bien.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Alléluia · Ps 30</h3><p><em>In te, Domine, speravi, non confundar in aeternum — En vous, Seigneur, j'ai espéré ; que je ne sois jamais confondu ; délivrez-moi dans votre justice.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mc 8, 1-9</h3><p>En ce temps-là, comme il y avait une grande foule, et qu'ils n'avaient rien à manger, Jésus appela ses disciples et leur dit : <em>« J'ai compassion de cette foule, parce qu'il y a déjà trois jours qu'ils sont avec moi, et ils n'ont rien à manger. Et si je les renvoie à jeun dans leurs maisons, ils défailliront en chemin ; et quelques-uns d'entre eux sont venus de loin. »</em> Ses disciples lui répondirent : <em>« Comment pourrait-on les rassasier de pains ici dans un désert ? »</em> Il leur demanda : <em>« Combien avez-vous de pains ? »</em> Ils répondirent : <em>« Sept. »</em> Il ordonna à la foule de s'asseoir par terre. Prenant alors les sept pains et rendant grâces, il les rompit et les donna à ses disciples pour les distribuer ; et ils les distribuèrent à la foule. Ils avaient aussi quelques petits poissons ; et les ayant bénis, il ordonna de les distribuer aussi. Ils mangèrent et furent rassasiés ; et on emporta sept corbeilles des morceaux qui restaient. Or ceux qui avaient mangé étaient environ quatre mille. Et il les renvoya.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Offertoire · Ps 17</h3><p><em>Perfice gressus meos in semitis tuis — Rendez mes pas assurés dans vos sentiers, afin que mes pieds ne chancellent pas.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Communion · Ps 26</h3><p><em>Unam petii a Domino, hanc requiram — Une seule chose j'ai demandée au Seigneur, c'est ce que je rechercherai : habiter dans la maison du Seigneur tous les jours de ma vie.</em></p>`, homelie:'' },
+    '2026-7-10': { feast:'Sept Saints Frères, Sts Rufine et Seconde — IIIe classe', ref:'Rm 6, 3-11 · Mc 8, 1-9', epitre:'Férie · Rm 6, 3-11 — Mc 8, 1-9', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Épître · Rm 6, 3-11</h3><p>Frères, regardez-vous comme morts au péché, mais vivants pour Dieu dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mc 8, 1-9</h3><p>En ce temps-là, Jésus dit : <em>« J'ai compassion de cette foule. »</em> Il prit les sept pains, les bénit et les distribua.</p>`, homelie:'' },
   '2026-7-11': { feast:'Messe de la Bienheureuse Vierge Marie au Samedi — IVe classe', ref:'Rm 6, 3-11 · Mc 8, 1-9', epitre:'Férie · Rm 6, 3-11 — Mc 8, 1-9', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Épître · Rm 6, 3-11</h3><p>Frères, regardez-vous comme morts au péché, mais vivants pour Dieu dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mc 8, 1-9</h3><p>En ce temps-là, Jésus dit : <em>« J'ai compassion de cette foule. »</em> Il rompit les sept pains et les distribua.</p>`, homelie:'' },
   '2026-7-12': { feast:'VIIe Dimanche après la Pentecôte', ref:'Rm 6, 19-23 · Mt 7, 15-21', epitre:'VIIe Dimanche · Rm 6, 19-23 — Mt 7, 15-21', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Introït · Ps 47</h3><p><em>Deus in loco sancto suo — Dieu est dans son saint séjour ; Dieu qui fait habiter dans sa maison ceux qui ont un même cœur.</em></p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Épître · Rm 6, 19-23</h3><p>Frères, je parle humainement à cause de la faiblesse de votre nature. De même que vous avez livré vos membres au service de l'impureté et de l'iniquité pour l'iniquité, de même maintenant livrez vos membres au service de la justice pour la sanctification. Car la solde du péché, c'est la mort ; mais le don de Dieu, c'est la vie éternelle dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mt 7, 15-21</h3><p>En ce temps-là, Jésus dit à ses disciples : <em>« Gardez-vous des faux prophètes. Vous les reconnaîtrez à leurs fruits. On ne cueille pas des raisins sur des épines, ni des figues sur des chardons. Tout arbre qui ne produit pas de bon fruit sera coupé et jeté au feu. Ce n'est pas celui qui me dit : Seigneur, Seigneur ! qui entrera dans le Royaume des cieux, mais celui qui fait la volonté de mon Père. »</em></p>`, homelie:'' },
   '2026-7-13': { feast:'Férie du VIIe Dimanche après la Pentecôte', ref:'Rm 6, 19-23 · Mt 7, 15-21', epitre:'Férie · Rm 6, 19-23 — Mt 7, 15-21', text:`<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:0 0 10px;">Épître · Rm 6, 19-23</h3><p>Frères, le don de Dieu, c'est la vie éternelle dans le Christ Jésus Notre-Seigneur.</p><h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">Évangile · Mt 7, 15-21</h3><p>En ce temps-là, Jésus dit : <em>« Gardez-vous des faux prophètes. Vous les reconnaîtrez à leurs fruits. »</em></p>`, homelie:'' },
@@ -1477,11 +1487,60 @@ async function fetchCalendarMonth(yearMonth) {
 
 async function fetchLiturgy(key) {
   if (MISSALE_CACHE[key]) return MISSALE_CACHE[key];
-  if (LITURGY[key]) { MISSALE_CACHE[key] = LITURGY[key]; return LITURGY[key]; }
-  // Pas de données pour ce jour — retourne vide
-  const empty = { feast:'', ref:'', epitre:'', text:'<p style="color:var(--muted);text-align:center;">Lectures à venir.</p>', homelie:'' };
-  MISSALE_CACHE[key] = empty;
-  return empty;
+  // Fête depuis la table statique
+  const staticEntry = LITURGY[key];
+  const feast = staticEntry?.feast || '';
+  try {
+    const res = await fetch(`https://www.missalemeum.com/fr/api/v5/propers/${key}`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const obs = Array.isArray(data) ? data[0] : data;
+    if (!obs) throw new Error('No data');
+    const sections = obs.sections || [];
+    const get = (name) => {
+      const sec = sections.find(s => s.id === name);
+      if (!sec) return '';
+      return sec.body.map(sub => Array.isArray(sub)
+        ? sub.filter((_,i)=>i%2===0).join(' ')
+        : String(sub)
+      ).join('\n');
+    };
+    // Construire le texte complet avec toutes les sections
+    const sectionNames = ['introitus','lectio','graduale','alleluja','tractus','sequentia','evangelium','offertorium','communio'];
+    const sectionLabels = {
+      introitus:'Introït', lectio:'Épître', graduale:'Graduel',
+      alleluja:'Alléluia', tractus:'Trait', sequentia:'Séquence',
+      evangelium:'Évangile', offertorium:'Offertoire', communio:'Communion'
+    };
+    let fullText = '';
+    for (const name of sectionNames) {
+      const sec = sections.find(s => s.id === name);
+      if (!sec) continue;
+      const label = sec.label || sectionLabels[name] || name;
+      const text = get(name);
+      if (text.trim()) {
+        fullText += `<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">${label}</h3><p>${text.replace(/\n/g,'</p><p>')}</p>`;
+      }
+    }
+    const epitre_ref = sections.find(s=>s.id==='lectio')?.label || '';
+    const evangile_ref = sections.find(s=>s.id==='evangelium')?.label || '';
+    const ref = [epitre_ref, evangile_ref].filter(Boolean).join(' · ');
+    const result = {
+      feast: feast || obs.title || '',
+      ref,
+      epitre: ref,
+      text: fullText || staticEntry?.text || '<p style="color:var(--muted);text-align:center;">Lectures à venir.</p>',
+      homelie: staticEntry?.homelie || ''
+    };
+    MISSALE_CACHE[key] = result;
+    return result;
+  } catch(e) {
+    // Fallback sur table statique si API indisponible
+    if (staticEntry) { MISSALE_CACHE[key] = staticEntry; return staticEntry; }
+    const empty = { feast, ref:'', epitre:'', text:'<p style="color:var(--muted);text-align:center;">Lectures à venir.</p>', homelie:'' };
+    MISSALE_CACHE[key] = empty;
+    return empty;
+  }
 }
 
 function getLiturgy(key) {
@@ -2156,14 +2215,23 @@ async function loadTodayActivity(userId){
 
 async function loadHomelies(){
   try {
-    // Charger toutes les homélies (publiées ET brouillons) pour l'admin/contributeur
+    // D'abord charger les homélies publiées (accessible à tous)
+    const {data:published} = await supa.from('homelies')
+      .select('date,content')
+      .eq('published', true);
+    if(published) published.forEach(h => { G.homelies[h.date] = h.content; });
+
+    // Ensuite charger les brouillons si connecté
     const {data:{user}} = await supa.auth.getUser();
-    if(!user) return;
-    const {data} = await supa.from('homelies').select('date,content,published');
-    if(data) data.forEach(h => {
-      if(h.published) G.homelies[h.date] = h.content;
-      else { if(!G.drafts) G.drafts={}; G.drafts[h.date] = h.content; }
-    });
+    if(user){
+      const {data:drafts} = await supa.from('homelies')
+        .select('date,content')
+        .eq('published', false);
+      if(drafts) drafts.forEach(h => {
+        if(!G.drafts) G.drafts={};
+        G.drafts[h.date] = h.content;
+      });
+    }
   } catch(e) { console.error('loadHomelies error:', e); }
 }
 
@@ -2229,7 +2297,20 @@ if(window.location.hash.includes('access_token') && window.location.hash.include
   document.querySelectorAll('.onb-overlay').forEach(el => el.classList.remove('open'));
   document.getElementById('reset-password-screen').classList.add('open');
 }
-// Liturgie chargée depuis la table statique LITURGY — pas de prefetch nécessaire
+// Prefetch les 10 prochains jours au chargement
+(async () => {
+  try {
+    const t = new Date();
+    const keys = [];
+    for (let i = -1; i < 9; i++) {
+      const d = new Date(t);
+      d.setDate(d.getDate() + i);
+      keys.push(dk(d));
+    }
+    await Promise.all(keys.map(k => fetchLiturgy(k).catch(()=>{})));
+    buildFeed();
+  } catch(e) {}
+})();
 
 // Check session on load — recharge l'état à chaque ouverture
 supa.auth.getSession().then(({data:{session}})=>{
