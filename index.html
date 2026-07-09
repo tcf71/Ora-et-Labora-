@@ -1097,13 +1097,12 @@ const LEVELS=[
 ];
 
 async function openLadder(){
-  // Recharger le score depuis Supabase avant d'afficher
   try {
     const {data:{user}} = await supa.auth.getUser();
     if(user){
       const {data:profile} = await supa.from('profiles').select('score,level').eq('id',user.id).single();
-      if(profile){
-        G.score = profile.score || 0;
+      if(profile && profile.score !== null){
+        G.score = profile.score;
         G.level = profile.level || 0;
         document.getElementById('hdr-score').textContent = G.score;
       }
