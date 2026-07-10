@@ -1096,20 +1096,22 @@ const LEVELS=[
    icon:'<svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="14" r="3.5" fill="currentColor"/></svg>'},
 ];
 
-async function openLadder(){
-  try {
-    const {data:{user}} = await supa.auth.getUser();
-    if(user){
-      const {data:profile} = await supa.from('profiles').select('score,level').eq('id',user.id).single();
-      if(profile && profile.score !== null){
-        G.score = profile.score;
-        G.level = profile.level || 0;
-        document.getElementById('hdr-score').textContent = G.score;
-      }
-    }
-  } catch(e) {}
+function openLadder(){
+  // Afficher immédiatement avec le score en mémoire
   renderLadder();
   document.getElementById('ladder-overlay').classList.add('open');
+  // Mettre à jour depuis Supabase en arrière-plan
+  supa.auth.getUser().then(({data:{user}})=>{
+    if(!user) return;
+    return supa.from('profiles').select('score,level').eq('id',user.id).single();
+  }).then(({data:profile})=>{
+    if(profile && profile.score > 0 && profile.score !== G.score){
+      G.score = profile.score;
+      G.level = profile.level || 0;
+      document.getElementById('hdr-score').textContent = G.score;
+      renderLadder(); // re-render avec le vrai score
+    }
+  }).catch(()=>{});
 }
 function closeLadder(){
   document.getElementById('ladder-overlay').classList.remove('open');
