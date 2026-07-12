@@ -1810,7 +1810,7 @@ function updateLevel(){
   G.level=lvl;
 }
 async function recalcScore(){
-  // Recalcule le score du jour depuis zéro et l'ajoute au score de base (hors jour actuel)
+  // Recalcule le score du jour depuis zéro
   const todayRc = dk(new Date());
   const ds = G.days[todayRc] || {};
   let dayScore = 0;
@@ -2510,6 +2510,7 @@ async function saveTodayActivity(){
     await saveScore();
   } catch(e) {
     console.error('saveTodayActivity error:', e);
+    showToast('⚠️ Erreur sauvegarde: '+e.message);
   }
 }
 
