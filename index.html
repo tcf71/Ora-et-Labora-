@@ -2029,7 +2029,7 @@ function updateReaderButtons(isDone){
     btnUnread.className='reader-btn active-unread';
   }
 }
-function setReaderState(done){
+async function setReaderState(done){
   const ds=G.days[readerKey]||(G.days[readerKey]={});
   if(readerType.startsWith('litanie:')){
     const litId=readerType.split(':')[1];
@@ -2037,20 +2037,22 @@ function setReaderState(done){
     const litPts=litPtsMap[litId]||15;
     if(!ds.litanies) ds.litanies={};
     const wasDoneLit=!!ds.litanies[litId];
-    if(done&&!wasDoneLit){ds.litanies[litId]=true;addScore(litPts,'Litanie priée +'+litPts+' pts');}
-    else if(!done&&wasDoneLit){delete ds.litanies[litId];G.score=Math.max(0,G.score-litPts);document.getElementById('hdr-score').textContent=G.score;}
-    updateReaderButtons(done); refreshCard(readerKey); return;
+    if(done&&!wasDoneLit){ds.litanies[litId]=true;showToast('Litanie priée +'+litPts+' pts');}
+    else if(!done&&wasDoneLit){delete ds.litanies[litId];showToast('-'+litPts+' pts');}
+    updateReaderButtons(done); refreshCard(readerKey);
+    await recalcScore(); return;
   }
   const isLecture=readerType==='lecture';
   const wasDone=isLecture?ds.lectures:ds.homelie;
   if(done && !wasDone){
-    if(isLecture){ds.lectures=true;addScore(PTS.lecture,'Lecture lue +'+PTS.lecture+' pts');}
-    else{ds.homelie=true;addScore(PTS.homelie,'Méditation faite +'+PTS.homelie+' pts');}
+    if(isLecture){ds.lectures=true;showToast('Lecture lue +'+PTS.lecture+' pts');}
+    else{ds.homelie=true;showToast('Méditation faite +'+PTS.homelie+' pts');}
   } else if(!done && wasDone){
-    if(isLecture){ds.lectures=false;G.score=Math.max(0,G.score-PTS.lecture);document.getElementById('hdr-score').textContent=G.score;}
-    else{ds.homelie=false;G.score=Math.max(0,G.score-PTS.homelie);document.getElementById('hdr-score').textContent=G.score;}
+    if(isLecture) ds.lectures=false;
+    else ds.homelie=false;
   }
   updateReaderButtons(done); refreshCard(readerKey);
+  await recalcScore();
 }
 
 /* ── ACTIONS ── */
