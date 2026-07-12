@@ -2054,20 +2054,18 @@ function setReaderState(done){
 /* ── ACTIONS ── */
 function selAve(key,v){
   const ds=G.days[key];
-  if(ds.ave)return; // already validated, don't allow re-selecting
+  if(ds.ave){ cancelAve(key); return; } // déjà validé → annuler
   const current=ds._aveSel||0;
-  // toggle: clicking the same bead again deselects it
   const newSel = (current===v) ? 0 : v;
   ds._aveSel=newSel;
-  const sec=document.getElementById('sec-ave-'+key);
-  if(sec)sec.querySelectorAll('.bead').forEach((b,i)=>{b.classList.toggle('done',AVE_OPTIONS[i].v===newSel);});
-  const btn=document.getElementById('btn-ave-'+key);
-  if(btn){
-    if(newSel>0){
-      btn.classList.remove('red');btn.classList.add('green','flipping');btn.textContent='Prier';
-    } else {
-      btn.classList.remove('green');btn.classList.add('red');btn.textContent='Prier';
-    }
+  if(newSel>0){
+    ds.ave=true;
+    G.totalAves+=newSel;
+    showToast(newSel+'× Ave Maria +'+newSel+' pts');
+    refreshCard(key);
+    recalcScore();
+  } else {
+    refreshCard(key);
   }
 }
 function doAve(key){
