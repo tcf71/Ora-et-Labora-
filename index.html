@@ -1809,7 +1809,7 @@ function updateLevel(){
   for(let i=0;i<LEVELS.length;i++){if(G.score>=LEVELS[i].threshold)lvl=i;}
   G.level=lvl;
 }
-function recalcScore(){
+async function recalcScore(){
   // Recalcule le score du jour depuis zéro et l'ajoute au score de base (hors jour actuel)
   const todayRc = dk(new Date());
   const ds = G.days[todayRc] || {};
@@ -1840,7 +1840,7 @@ function recalcScore(){
   G.score = Math.max(0, G.score);
   document.getElementById('hdr-score').textContent = G.score;
   updateLevel();
-  saveTodayActivity();
+  await saveTodayActivity();
 }
 
 /* ── STATE HELPERS ── */
