@@ -2064,13 +2064,10 @@ function selAve(key,v){
     // Décocher le palier actuel → revenir au palier précédent
     const prev = AVE_OPTIONS.filter(o=>o.v<v).pop();
     const prevVal = prev ? prev.v : 0;
-    const lost = current - prevVal;
     ds._aveSel = prevVal;
     ds.ave = false;
-    G.totalAves = Math.max(0, G.totalAves - lost);
-    G.score = Math.max(0, G.score - lost);
-    document.getElementById('hdr-score').textContent = G.score;
-    showToast('-'+lost+' Ave Maria');
+    G.totalAves = Math.max(0, G.totalAves - (current - prevVal));
+    showToast('← '+(current-prevVal)+' Ave retirés');
     refreshCard(key);
     recalcScore();
     return;
