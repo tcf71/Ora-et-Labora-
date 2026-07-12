@@ -1922,7 +1922,7 @@ function secAve(key,ds){
   return `<div class="tile tile-ave${ds.ave?' done-tile':''}" id="sec-ave-${key}" onclick="${ds.ave?`cancelAve('${key}')`:(sel>0?`doAve('${key}')`:null)}" style="cursor:pointer;">
     <div class="tile-label-h">${SVG_VIERGE}<span>Ave Maria</span></div>
     <div class="beads-row">${beads}</div>
-    <div class="tile-check">${ds.ave?'✓':''}</div>
+    
   </div>`;
 }
 
@@ -2054,12 +2054,13 @@ function setReaderState(done){
 /* ── ACTIONS ── */
 function selAve(key,v){
   const ds=G.days[key];
-  if(ds.ave){ cancelAve(key); return; } // déjà validé → annuler
+  if(ds.ave){ cancelAve(key); return; }
   const current=ds._aveSel||0;
   const newSel = (current===v) ? 0 : v;
   ds._aveSel=newSel;
   if(newSel>0){
-    ds.ave=true;
+    // Seul 10× valide complètement la tuile (verte)
+    if(newSel===10) ds.ave=true;
     G.totalAves+=newSel;
     showToast(newSel+'× Ave Maria +'+newSel+' pts');
     refreshCard(key);
