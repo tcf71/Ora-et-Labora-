@@ -2420,13 +2420,15 @@ async function saveProfile(userId){
 
 async function saveScore(){
   const {data:{user}} = await supa.auth.getUser();
-  if(!user) return;
-  await supa.from('profiles').upsert({
+  if(!user) { console.error('saveScore: no user'); return; }
+  const {error} = await supa.from('profiles').upsert({
     id: user.id,
     score: G.score,
     level: G.level,
     prenom: G.profile.prenom || ''
   }, {onConflict:'id'});
+  if(error) console.error('saveScore error:', error.message, 'score was:', G.score);
+  else console.log('saveScore OK:', G.score);
 }
 
 async function loadTodayActivity(userId){
