@@ -1741,7 +1741,7 @@ const ROS_STEPS=[{v:50,l:'1×'},{v:100,l:'2×'},{v:150,l:'3×'}];
 const PTS={lecture:14,homelie:21,avePerAve:1,chapPerDizaine:10,chapFirst:16,chapTotal:56,rosPerChapelet:85,rosTotal:255,litSacreCoeur:15,litSaints:15,litVierge:15,litJoseph:15,dayEmpty:-50,dayPartial:-10};
 
 let G={
-  score:0,xp:0,level:1,streak:0,
+  score:0, baseScore:0, xp:0, level:0, streak:0,
   totalAves:0,totalChapelets:0,totalRosaries:0,perfectDays:0,
   chapeletCount:0,rosaryCount:0,
   profile:{prenom:'',nom:'',email:'',role:'',onboarded:false},
@@ -1808,6 +1808,39 @@ function updateLevel(){
   let lvl=0;
   for(let i=0;i<LEVELS.length;i++){if(G.score>=LEVELS[i].threshold)lvl=i;}
   G.level=lvl;
+}
+function recalcScore(){
+  // Recalcule le score du jour depuis zéro et l'ajoute au score de base (hors jour actuel)
+  const todayRc = dk(new Date());
+  const ds = G.days[todayRc] || {};
+  let dayScore = 0;
+  if(ds.lectures) dayScore += PTS.lecture;
+  if(ds.homelie) dayScore += PTS.homelie;
+  if(ds._aveSel) dayScore += ds._aveSel * PTS.avePerAve;
+  // Chapelet
+  const chapCount = G.chapeletCount || 0;
+  if(chapCount > 0){
+    const steps = [16,26,36,46,56];
+    let chap = 0;
+    for(let i=0;i<steps.length;i++){
+      if(chapCount >= steps[i]) chap = (i===0)?PTS.chapFirst:(PTS.chapFirst + i*PTS.chapPerDizaine);
+    }
+    dayScore += chap;
+  }
+  // Rosaire
+  const rosCount = G.rosaryCount || 0;
+  if(rosCount >= 50) dayScore += PTS.rosPerChapelet;
+  if(rosCount >= 100) dayScore += PTS.rosPerChapelet;
+  if(rosCount >= 150) dayScore += PTS.rosPerChapelet;
+  // Litanies
+  if(ds.litanies){
+    Object.values(ds.litanies).forEach(v=>{ if(v===true) dayScore += 15; });
+  }
+  G.score = G.baseScore + dayScore;
+  G.score = Math.max(0, G.score);
+  document.getElementById('hdr-score').textContent = G.score;
+  updateLevel();
+  saveTodayActivity();
 }
 
 /* ── STATE HELPERS ── */
@@ -2040,13 +2073,12 @@ function selAve(key,v){
 function doAve(key){
   const ds=G.days[key];if(ds.ave)return;
   const n=ds._aveSel||0;if(!n){showToast('Choisissez un nombre d\'Ave Maria');return;}
-  ds.ave=true;G.totalAves+=n;addScore(n*PTS.avePerAve,'Ave Maria +'+n+' pts');refreshCard(key);
+  ds.ave=true;G.totalAves+=n;refreshCard(key);showToast('Ave Maria +'+n+' pts');recalcScore();
 }
 function addChapelet(v,key){
   if(G.chapeletCount>=50||G.chapeletCount>=v)return;
   G.chapeletCount=v;G.totalAves+=10;
   const prev=CHAP_STEPS.filter(x=>x<v).pop()||0;
-  const pts=(prev===0)?PTS.chapFirst:Math.round((v-prev)/10*PTS.chapPerDizaine);
   addScore(pts,'Dizaine récitée +'+pts+' pts');
   if(G.chapeletCount>=50){G.totalChapelets++;setTimeout(()=>{refreshAllCards();},1500);}
   refreshAllCards();
@@ -2335,6 +2367,7 @@ async function loadUserData(user){
     if(profile){
       G.profile.prenom = profile.prenom || '';
       G.score = profile.score || 0;
+      G.baseScore = profile.score || 0;
       G.level = profile.level || 1;
       document.getElementById('hdr-score').textContent = G.score;
     }
@@ -2388,6 +2421,12 @@ async function loadTodayActivity(userId){
     G.chapeletCount    = data.chapelet_count || 0;
     G.rosaryCount      = data.rosaire_count  || 0;
     ds.litanies        = data.litanies || {};
+    // Recalculer le score du jour pour initialiser baseScore correctement
+    let dayScore = 0;
+    if(ds.lectures) dayScore += PTS.lecture;
+    if(ds.homelie) dayScore += PTS.homelie;
+    if(ds._aveSel) dayScore += ds._aveSel * PTS.avePerAve;
+    G.baseScore = Math.max(0, G.score - dayScore);
   }
 }
 
@@ -2578,9 +2617,8 @@ function toggleHom(key){ openReader(key,'homelie'); }
 function cancelAve(key){
   const ds=G.days[key];if(!ds||!ds.ave)return;
   const n=ds._aveSel||1; ds.ave=false; ds._aveSel=0; G.totalAves=Math.max(0,G.totalAves-n);
-  G.score=Math.max(0,G.score-n*PTS.avePerAve); document.getElementById('hdr-score').textContent=G.score;
   refreshCard(key); showToast('← Ave Maria annulés');
-  saveTodayActivity();
+  recalcScore();
 }
 // Undo chapelet one step
 function undoChap(key){
@@ -2748,7 +2786,7 @@ function revertChap(v, key){
   document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards();
   showToast('← Chapelet revenu à '+prev+' Ave');
-  saveTodayActivity();
+  recalcScore();
 }
 function revertRos(v, key){
   if(G.rosaryCount<=0||G.rosaryCount<v)return;
