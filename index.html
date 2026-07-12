@@ -1917,12 +1917,14 @@ function buildCard(d){
 }
 
 function secAve(key,ds){
-  const sel=G.days[key]._aveSel||0;const hasSel=sel>0;
-  const beads=AVE_OPTIONS.map(o=>`<div class="bead${sel===o.v?' done':''}" onclick="selAve('${key}',${o.v})">${o.l}</div>`).join('');
-  return `<div class="tile tile-ave${ds.ave?' done-tile':''}" id="sec-ave-${key}" onclick="${ds.ave?`cancelAve('${key}')`:(sel>0?`doAve('${key}')`:null)}" style="cursor:pointer;">
-    <div class="tile-label-h">${SVG_VIERGE}<span>Ave Maria</span></div>
-    <div class="beads-row">${beads}</div>
-    
+  const total=G.days[key]._aveSel||0;
+  // Beads verts jusqu'au palier atteint
+  const beads=AVE_OPTIONS.map(o=>`<div class="bead${o.v<=total&&total>0?' done':''}" onclick="selAve('${key}',${o.v})">${o.l}</div>`).join('');
+  const label = total > 0 ? `<div class="tile-sub">${total} Ave</div>` : `<div class="tile-sub" style="color:rgba(122,58,0,0.4);">Tap une pastille</div>`;
+  return `<div class="tile tile-ave${ds.ave?' done-tile':''}" id="sec-ave-${key}" style="cursor:pointer;">
+    <div class="tile-label-h"><span>Ave Maria</span></div>
+    <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">${beads}</div>
+    ${label}
   </div>`;
 }
 
@@ -2054,20 +2056,41 @@ function setReaderState(done){
 /* ── ACTIONS ── */
 function selAve(key,v){
   const ds=G.days[key];
-  if(ds.ave){ cancelAve(key); return; }
-  const current=ds._aveSel||0;
-  const newSel = (current===v) ? 0 : v;
-  ds._aveSel=newSel;
-  if(newSel>0){
-    // Seul 10× valide complètement la tuile (verte)
-    if(newSel===10) ds.ave=true;
-    G.totalAves+=newSel;
-    showToast(newSel+'× Ave Maria +'+newSel+' pts');
+  if(!ds) return;
+  const current = ds._aveSel||0;
+
+  // On ne peut qu'avancer, sauf décocher le dernier palier
+  if(v === current){
+    // Décocher le palier actuel → revenir au palier précédent
+    const prev = AVE_OPTIONS.filter(o=>o.v<v).pop();
+    const prevVal = prev ? prev.v : 0;
+    const lost = current - prevVal;
+    ds._aveSel = prevVal;
+    ds.ave = false;
+    G.totalAves = Math.max(0, G.totalAves - lost);
+    G.score = Math.max(0, G.score - lost);
+    document.getElementById('hdr-score').textContent = G.score;
+    showToast('-'+lost+' Ave Maria');
     refreshCard(key);
     recalcScore();
-  } else {
-    refreshCard(key);
+    return;
   }
+
+  // On ne peut pas reculer en dessous du palier actuel
+  if(v < current){
+    showToast('Vous avez déjà récité '+current+' Ave aujourd\'hui');
+    return;
+  }
+
+  // Avancer vers un nouveau palier
+  const gained = v - current;
+  ds._aveSel = v;
+  G.totalAves += gained;
+  if(v === 10) ds.ave = true; // tuile verte uniquement à 10
+  else ds.ave = false;
+  showToast('+'+gained+' Ave Maria · total '+v);
+  refreshCard(key);
+  recalcScore();
 }
 function doAve(key){
   const ds=G.days[key];if(ds.ave)return;
