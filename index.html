@@ -1750,7 +1750,11 @@ let G={
 };
 
 const today=new Date();
-function dk(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function dk(d){
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+m+'-'+day;
+}
 function rd(d){const s=d.getDate()+d.getMonth()*3;return READINGS[s%READINGS.length];}
 
 /* ── NAVIGATION ── */
@@ -2056,14 +2060,13 @@ async function setReaderState(done){
 }
 
 /* ── ACTIONS ── */
-function selAve(key,v){
+async function selAve(key,v){
   const ds=G.days[key];
   if(!ds) return;
   const current = ds._aveSel||0;
 
   // On ne peut qu'avancer, sauf décocher le dernier palier
   if(v === current){
-    // Décocher le palier actuel → revenir au palier précédent
     const prev = AVE_OPTIONS.filter(o=>o.v<v).pop();
     const prevVal = prev ? prev.v : 0;
     ds._aveSel = prevVal;
@@ -2071,11 +2074,11 @@ function selAve(key,v){
     G.totalAves = Math.max(0, G.totalAves - (current - prevVal));
     showToast('← '+(current-prevVal)+' Ave retirés');
     refreshCard(key);
-    recalcScore();
+    await recalcScore();
     return;
   }
 
-  // On ne peut pas reculer en dessous du palier actuel
+  // On ne peut pas reculer
   if(v < current){
     showToast('Vous avez déjà récité '+current+' Ave aujourd\'hui');
     return;
@@ -2085,11 +2088,11 @@ function selAve(key,v){
   const gained = v - current;
   ds._aveSel = v;
   G.totalAves += gained;
-  if(v === 10) ds.ave = true; // tuile verte uniquement à 10
+  if(v === 10) ds.ave = true;
   else ds.ave = false;
   showToast('+'+gained+' Ave Maria · total '+v);
   refreshCard(key);
-  recalcScore();
+  await recalcScore();
 }
 function doAve(key){
   const ds=G.days[key];if(ds.ave)return;
