@@ -514,9 +514,11 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 
     <div class="current-card">
       <div class="current-level-name" id="ladder-level-name">Novice</div>
-      <div class="current-score"><span id="ladder-score">0</span> <span class="u">points</span></div>
+      <div class="current-score"><span id="ladder-score">0</span> <span class="u">pts/jour en moyenne</span></div>
+      <div class="hdr-sub" style="font-size:10px;color:var(--muted);margin-top:-4px;">Moyenne des 6 derniers mois</div>
       <div class="progress-track"><div class="progress-fill" id="ladder-progress-fill" style="width:0%;"></div></div>
       <div class="progress-label" id="ladder-progress-label">—</div>
+      <div id="spirit-frise" style="display:flex;gap:2px;justify-content:center;margin-top:12px;flex-wrap:wrap;"></div>
     </div>
 
     <div class="ladder-wrap">
@@ -1079,60 +1081,61 @@ const FEASTS={1:'Sainte Marie Mère de Dieu',6:'Épiphanie du Seigneur',25:'Nati
 const MYSTERY_TYPES=['Mystères joyeux','Mystères lumineux','Mystères douloureux','Mystères glorieux','Mystères joyeux','Mystères lumineux','Mystères douloureux'];
 const TITLES=['Novice','Fidèle assidu','Serviteur de Dieu','Témoin de la Foi','Pèlerin de lumière','Apôtre du Rosaire','Saint des temps'];
 
+// Seuils exprimés en MOYENNE DE POINTS QUOTIDIENS sur les 6 derniers mois (0 à 263 = jour parfait :
+// lecture 14 + méditation 21 + rosaire complet 168 + 4 litanies 60).
 const LEVELS=[
   {name:'Novice',threshold:0,desc:'Les premiers pas dans la prière',voie:'Voie purgative',
    icon:'<svg width="20" height="20" viewBox="0 0 24 24"><rect x="10" y="2" width="4" height="20" rx="1" fill="currentColor"/><rect x="2" y="9" width="20" height="4" rx="1" fill="currentColor"/></svg>'},
-  {name:'Fidèle assidu',threshold:500,desc:'Une semaine de fidélité',voie:null,
+  {name:'Fidèle assidu',threshold:60,desc:'Une pratique régulière qui s\'installe',voie:null,
    icon:'<svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2 C12 2 9 8 9 13 C9 16 10 18 12 18 C14 18 15 16 15 13 C15 8 12 2 12 2Z" fill="currentColor"/><rect x="10" y="18" width="4" height="4" fill="currentColor" opacity="0.6"/></svg>'},
-  {name:'Serviteur de Dieu',threshold:2000,desc:'Un mois de constance',voie:null,
+  {name:'Serviteur de Dieu',threshold:100,desc:'La constance devient une habitude',voie:null,
    icon:'<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="6" r="3" fill="currentColor"/><circle cx="18" cy="10" r="2.2" fill="currentColor"/><circle cx="18" cy="17" r="2.2" fill="currentColor"/><circle cx="12" cy="20" r="2.2" fill="currentColor"/><circle cx="6" cy="17" r="2.2" fill="currentColor"/><circle cx="6" cy="10" r="2.2" fill="currentColor"/></svg>'},
-  {name:'Témoin de la Foi',threshold:6000,desc:"Trois mois d'engagement",voie:'Voie illuminative',
+  {name:'Témoin de la Foi',threshold:150,desc:"Une vie de prière qui rayonne",voie:'Voie illuminative',
    icon:'<svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2 L14 9 L21 9 L15.5 13.5 L17.5 21 L12 16.5 L6.5 21 L8.5 13.5 L3 9 L10 9 Z" fill="currentColor"/></svg>'},
-  {name:'Pèlerin de lumière',threshold:15000,desc:'Six mois de progression',voie:null,
+  {name:'Pèlerin de lumière',threshold:190,desc:'Presque tout, presque chaque jour',voie:null,
    icon:'<svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2"/><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/></svg>'},
-  {name:'Apôtre du Rosaire',threshold:30000,desc:'Un an de persévérance',voie:'Voie unitive',
+  {name:'Apôtre du Rosaire',threshold:230,desc:'Le rosaire complet devient quotidien',voie:'Voie unitive',
    icon:'<svg width="20" height="20" viewBox="0 0 24 24"><path d="M3 16 L3 11 L8 14 L12 4 L16 14 L21 11 L21 16 Z" fill="currentColor"/><rect x="3" y="16" width="18" height="3" fill="currentColor"/></svg>'},
-  {name:'Saint des temps',threshold:60000,desc:'Une vie tournée vers Dieu',voie:null,
+  {name:'Saint des temps',threshold:263,desc:'Tous les jours, sans faille, pendant six mois',voie:null,
    icon:'<svg width="22" height="22" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="9" ry="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="14" r="3.5" fill="currentColor"/></svg>'},
 ];
+const SPIRIT_WINDOW_DAYS=182;
+const SPIRIT_MAX_DAY=263; // lecture 14 + méditation 21 + rosaire complet 168 + 4 litanies 60 (défini plus bas via PTS)
 
 function openLadder(){
   // Afficher immédiatement avec le score en mémoire
   renderLadder();
   document.getElementById('ladder-overlay').classList.add('open');
-  // Mettre à jour depuis Supabase en arrière-plan
+  // Recalculer la moyenne 6 mois depuis Supabase en arrière-plan
   supa.auth.getUser().then(({data:{user}})=>{
     if(!user) return;
-    return supa.from('profiles').select('score,level').eq('id',user.id).single();
-  }).then(({data:profile})=>{
-    if(profile && profile.score > 0 && profile.score !== G.score){
-      G.score = profile.score;
-      G.level = profile.level || 0;
-      document.getElementById('hdr-score').textContent = G.score;
-      renderLadder(); // re-render avec le vrai score
-    }
+    return computeSpiritAverage(user.id);
+  }).then(()=>{
+    updateLevel();
+    renderLadder(); // re-render avec la vraie moyenne
   }).catch(()=>{});
 }
 function closeLadder(){
   document.getElementById('ladder-overlay').classList.remove('open');
 }
 function renderLadder(){
-  const score=G.score;
+  const avg=Math.round(G.spiritAvg||0);
   let currentIdx=0;
-  for(let i=0;i<LEVELS.length;i++){if(score>=LEVELS[i].threshold)currentIdx=i;}
+  for(let i=0;i<LEVELS.length;i++){if(avg>=LEVELS[i].threshold)currentIdx=i;}
   document.getElementById('ladder-level-name').textContent=LEVELS[currentIdx].name;
-  document.getElementById('ladder-score').textContent=score;
+  document.getElementById('ladder-score').textContent=avg;
   const next=LEVELS[currentIdx+1];
   if(next){
     const span=next.threshold-LEVELS[currentIdx].threshold;
-    const prog=score-LEVELS[currentIdx].threshold;
+    const prog=avg-LEVELS[currentIdx].threshold;
     const pct=Math.min(100,Math.round(prog/span*100));
     document.getElementById('ladder-progress-fill').style.width=pct+'%';
-    document.getElementById('ladder-progress-label').innerHTML=(next.threshold-score)+' points avant <strong>'+next.name+'</strong>';
+    document.getElementById('ladder-progress-label').innerHTML=(next.threshold-avg)+' pts/jour (moy.) avant <strong>'+next.name+'</strong>';
   } else {
     document.getElementById('ladder-progress-fill').style.width='100%';
     document.getElementById('ladder-progress-label').textContent="Vous avez atteint le sommet de l'échelle 🙏";
   }
+  renderSpiritFrise();
   const html=[...LEVELS].reverse().map((lvl,revI)=>{
     const i=LEVELS.length-1-revI;
     const side=i%2===0?'left':'right';
@@ -1141,7 +1144,7 @@ function renderLadder(){
     return `${voieHtml}<div class="rung ${state} ${side}">
       <div class="rung-card">
         <div class="rung-name">${lvl.name}</div>
-        <div class="rung-pts">${lvl.threshold.toLocaleString('fr-FR')} pts</div>
+        <div class="rung-pts">${lvl.threshold} pts/j (moy.)</div>
         <div class="rung-desc">${lvl.desc}</div>
       </div>
       <div class="rung-node" style="color:${state==='done'?'var(--done-border)':state==='current'?'#c9a84c':'var(--border)'}">${lvl.icon}</div>
@@ -1742,6 +1745,7 @@ const PTS={lecture:14,homelie:21,avePerAve:1,chapPerDizaine:10,chapFirst:16,chap
 
 let G={
   score:0, baseScore:0, xp:0, level:0, streak:0,
+  spiritAvg:0, spiritHistory:{},
   totalAves:0,totalChapelets:0,totalRosaries:0,perfectDays:0,
   chapeletCount:0,rosaryCount:0,
   profile:{prenom:'',nom:'',email:'',role:'',onboarded:false},
@@ -1809,9 +1813,63 @@ function addScore(pts,msg){
   saveTodayActivity();
 }
 function updateLevel(){
+  // Le niveau (Novice → Saint des temps) reflète la MOYENNE quotidienne sur 6 mois,
+  // pas le score cumulé (qui reste affiché tel quel en haut de l'écran).
   let lvl=0;
-  for(let i=0;i<LEVELS.length;i++){if(G.score>=LEVELS[i].threshold)lvl=i;}
+  const avg=G.spiritAvg||0;
+  for(let i=0;i<LEVELS.length;i++){if(avg>=LEVELS[i].threshold)lvl=i;}
   G.level=lvl;
+}
+function dayScoreForAverage(row){
+  // Formule restreinte utilisée uniquement pour la moyenne "échelle sainte" :
+  // lecture + méditation + rosaire complet + litanies (le chapelet seul et l'Ave Maria
+  // isolé sont considérés comme déjà inclus dans un rosaire complet).
+  let s=0;
+  if(row.lectures) s+=PTS.lecture;
+  if(row.homelie) s+=PTS.homelie;
+  const ros=row.rosaire_count||0;
+  if(ros>=50) s+=PTS.rosPerChapelet;
+  if(ros>=100) s+=PTS.rosPerChapelet;
+  if(ros>=150) s+=PTS.rosPerChapelet;
+  if(row.litanies){
+    Object.values(row.litanies).forEach(v=>{ if(v===true) s+=PTS.litSacreCoeur; });
+  }
+  return s;
+}
+async function computeSpiritAverage(userId){
+  const end=new Date();
+  const start=new Date(); start.setDate(end.getDate()-(SPIRIT_WINDOW_DAYS-1));
+  const startKey=dk(start);
+  const history={};
+  try{
+    const {data}=await supa.from('daily_activity')
+      .select('date,lectures,homelie,rosaire_count,litanies')
+      .eq('user_id',userId)
+      .gte('date',startKey);
+    let total=0;
+    if(data) data.forEach(row=>{ const s=dayScoreForAverage(row); history[row.date]=s; total+=s; });
+    G.spiritAvg=total/SPIRIT_WINDOW_DAYS;
+  }catch(e){
+    console.error('computeSpiritAverage error:',e);
+    G.spiritAvg=G.spiritAvg||0;
+  }
+  G.spiritHistory=history;
+  return G.spiritAvg;
+}
+function renderSpiritFrise(days=30){
+  const el=document.getElementById('spirit-frise');
+  if(!el) return;
+  const history=G.spiritHistory||{};
+  const cells=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const key=dk(d);
+    const s=history[key]||0;
+    const pct=Math.min(1,s/SPIRIT_MAX_DAY);
+    const bg=pct<=0?'var(--border)':`rgba(74,155,90,${0.15+pct*0.85})`;
+    cells.push(`<div title="${key} · ${s} pts" style="width:9px;height:9px;border-radius:2px;background:${bg};"></div>`);
+  }
+  el.innerHTML=cells.join('');
 }
 async function recalcScore(){
   // Recalcule le score du jour depuis zéro
@@ -2227,7 +2285,7 @@ function changePassword(){
 function renderCompte(){
   const p=G.profile;
   document.getElementById('c-name').textContent=(p.prenom||p.nom)?(p.prenom+' '+p.nom).trim():'—';
-  document.getElementById('c-title').textContent=TITLES[G.level-1]+' · Niveau '+G.level;
+  document.getElementById('c-title').textContent=TITLES[G.level]+' · Niveau '+(G.level+1);
   document.getElementById('c-score').textContent=G.score;
   document.getElementById('f-prenom').value=p.prenom||'';
   document.getElementById('f-nom').value=p.nom||'';
@@ -2304,7 +2362,7 @@ function goAuthScreen(screen){
 
 async function doLogout(){
   await supa.auth.signOut();
-  G.score=0; G.level=1; G.streak=0;
+  G.score=0; G.level=0; G.streak=0;
   G.chapeletCount=0; G.rosaryCount=0;
   G.profile={prenom:'',nom:'',email:'',role:'',onboarded:false};
   G.days={}; G.homelies={};
@@ -2393,7 +2451,7 @@ async function loadUserData(user){
       G.profile.prenom = profile.prenom || '';
       G.score = profile.score || 0;
       G.baseScore = profile.score || 0;
-      G.level = profile.level || 1;
+      G.level = profile.level ?? 0;
       document.getElementById('hdr-score').textContent = G.score;
     }
     // Load today's activity
@@ -2406,6 +2464,11 @@ async function loadUserData(user){
     fetchDailyCounter().catch(()=>{});
     // Subscribe to realtime counter updates
     subscribeToCounter();
+    // Moyenne 6 mois → niveau de l'échelle sainte (non-bloquant)
+    computeSpiritAverage(user.id).then(()=>{
+      updateLevel();
+      if(document.getElementById('page-compte')?.classList.contains('active')) renderCompte();
+    }).catch(()=>{});
   } catch(e) {
     console.error('loadUserData error:', e);
     // Rendre l'app utilisable même si le chargement échoue
