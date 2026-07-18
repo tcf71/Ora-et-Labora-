@@ -2099,13 +2099,15 @@ function doAve(key){
   const n=ds._aveSel||0;if(!n){showToast('Choisissez un nombre d\'Ave Maria');return;}
   ds.ave=true;G.totalAves+=n;refreshCard(key);showToast('Ave Maria +'+n+' pts');recalcScore();
 }
-function addChapelet(v,key){
+async function addChapelet(v,key){
   if(G.chapeletCount>=50||G.chapeletCount>=v)return;
   G.chapeletCount=v;G.totalAves+=10;
   const prev=CHAP_STEPS.filter(x=>x<v).pop()||0;
-  addScore(pts,'Dizaine récitée +'+pts+' pts');
-  if(G.chapeletCount>=50){G.totalChapelets++;setTimeout(()=>{refreshAllCards();},1500);}
+  const pts = prev===0 ? PTS.chapFirst : PTS.chapPerDizaine;
+  showToast('Dizaine récitée +'+pts+' pts');
   refreshAllCards();
+  await recalcScore();
+  if(G.chapeletCount>=50){G.totalChapelets++;setTimeout(()=>{refreshAllCards();},1500);}
 }
 function addRosaire(v,key){
   if(G.rosaryCount>=150||G.rosaryCount>=v)return;
