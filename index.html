@@ -1907,7 +1907,6 @@ function buildCard(d){
     </div>
     <div class="tile${ds.homelie?' done-tile':''} tile-hom" id="sec-hom-${key}" onclick="toggleHom('${key}')" style="cursor:pointer;">
       <div class="tile-label-v"><span>Méditation</span></div>
-      ${(!G.homelies[key]&&!LITURGY[key])?`<div style="font-size:8px;color:rgba(255,255,255,0.8);text-align:center;">⏳</div>`:''}
     </div>
     ${secAve(key,ds)}
     ${secChapelet(key,dow)}
@@ -1945,7 +1944,7 @@ function secChapelet(key,dow){
   return `<div class="tile tile-chap${isDone?' done-tile':inProg?' prog-tile':''}" id="sec-chap-${key}">
     <div class="tile-label-h">${SVG_CHAPELET}<span>Chapelet</span></div>
     <div class="beads-row">${beads}</div>
-    <div class="tile-sub">${isDone?'Complété ✓':inProg?count+'/56 Ave':'Tap une pastille'}</div>
+    <div class="tile-sub">${isDone?'':inProg?count+'/56 Ave':'Tap une pastille'}</div>
   </div>`;
 }
 
@@ -1961,7 +1960,7 @@ function secRosaire(key){
   return `<div class="tile tile-ros${isDone?' done-tile':inProg?' prog-tile':''}" id="sec-ros-${key}">
     <div class="tile-label-h">${SVG_COURONNE}<span>Rosaire</span></div>
     <div class="beads-row" style="gap:8px;">${beads}</div>
-    <div class="tile-sub">${isDone?'Accompli ✓':inProg?count+'/150 Ave':'Tap une pastille'}</div>
+    <div class="tile-sub">${isDone?'':inProg?count+'/150 Ave':'Tap une pastille'}</div>
   </div>`;
 }
 
@@ -2838,7 +2837,6 @@ function secLitanies(key, ds) {
     const shortName = l.titre.replace('Litanies ','');
     return `<div class="lit-cell${done?' done-lit':''}" onclick="openLitanie('${key}','${l.id}')" style="cursor:pointer;">
       <span class="lit-cell-name">${shortName}</span>
-      ${done?`<span style="font-size:15px;color:#fff;flex-shrink:0;">✓</span>`:''}
     </div>`;
   }).join('');
   return `<div class="tile lit-tile-big" id="sec-lit-${key}">
