@@ -1110,7 +1110,7 @@ function openLadder(){
   // Recalculer la moyenne 6 mois depuis Supabase en arrière-plan
   supa.auth.getUser().then(({data:{user}})=>{
     if(!user) return;
-    return computeSpiritAverage(user.id);
+    return computeSpiritAverage(user.id, G.profile.createdAt);
   }).then(()=>{
     updateLevel();
     renderLadder(); // re-render avec la vraie moyenne
@@ -1850,11 +1850,18 @@ function dayScoreForAverage(row){
     chapeletCount: row.chapelet_count, rosaireCount: row.rosaire_count, litanies: row.litanies
   });
 }
-async function computeSpiritAverage(userId){
+async function computeSpiritAverage(userId, createdAt){
   const end=new Date();
   const start=new Date(); start.setDate(end.getDate()-(SPIRIT_WINDOW_DAYS-1));
   const startKey=dk(start);
   const history={};
+  // Un nouvel utilisateur ne doit pas être divisé par 182 dès le premier jour :
+  // on divise par le nombre de jours écoulés depuis l'inscription, plafonné à 182.
+  let denom=SPIRIT_WINDOW_DAYS;
+  if(createdAt){
+    const daysSince=Math.floor((end-new Date(createdAt))/86400000)+1;
+    denom=Math.min(SPIRIT_WINDOW_DAYS, Math.max(1,daysSince));
+  }
   try{
     const {data}=await supa.from('daily_activity')
       .select('date,lectures,homelie,ave_count,chapelet_count,rosaire_count,litanies')
@@ -1862,7 +1869,7 @@ async function computeSpiritAverage(userId){
       .gte('date',startKey);
     let total=0;
     if(data) data.forEach(row=>{ const s=dayScoreForAverage(row); history[row.date]=s; total+=s; });
-    G.spiritAvg=total/SPIRIT_WINDOW_DAYS;
+    G.spiritAvg=total/denom;
   }catch(e){
     console.error('computeSpiritAverage error:',e);
     G.spiritAvg=G.spiritAvg||0;
@@ -1880,8 +1887,9 @@ function renderSpiritFrise(days=30){
     const key=dk(d);
     const s=history[key]||0;
     const pct=Math.min(1,s/SPIRIT_MAX_DAY);
-    const bg=pct<=0?'var(--border)':`rgba(74,155,90,${0.15+pct*0.85})`;
-    cells.push(`<div title="${key} · ${s} pts" style="width:9px;height:9px;border-radius:2px;background:${bg};"></div>`);
+    const bg=pct<=0?'var(--border)':`rgba(59,142,77,${0.45+pct*0.55})`;
+    const border=pct<=0?'':'border:1px solid rgba(59,142,77,0.5);';
+    cells.push(`<div title="${key} · ${s} pts" style="width:13px;height:13px;border-radius:3px;background:${bg};${border}"></div>`);
   }
   el.innerHTML=cells.join('');
 }
@@ -2500,6 +2508,7 @@ async function loadUserData(user){
     const {data:profile} = await supa.from('profiles').select('*').eq('id',user.id).single();
     if(profile){
       G.profile.prenom = profile.prenom || '';
+      G.profile.createdAt = profile.created_at || null;
       G.score = profile.score || 0;
       G.baseScore = profile.score || 0;
       G.level = profile.level ?? 0;
@@ -2516,7 +2525,7 @@ async function loadUserData(user){
     // Subscribe to realtime counter updates
     subscribeToCounter();
     // Moyenne 6 mois → niveau de l'échelle sainte (non-bloquant)
-    computeSpiritAverage(user.id).then(()=>{
+    computeSpiritAverage(user.id, G.profile.createdAt).then(()=>{
       updateLevel();
       if(document.getElementById('page-compte')?.classList.contains('active')) renderCompte();
     }).catch(()=>{});
