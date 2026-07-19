@@ -1101,6 +1101,7 @@ const LEVELS=[
 ];
 const SPIRIT_WINDOW_DAYS=182;
 const SPIRIT_MAX_DAY=263; // lecture 14 + méditation 21 + rosaire complet 168 + 4 litanies 60 (défini plus bas via PTS)
+const EDIT_WINDOW_DAYS=7; // rattrapage possible jusqu'à 7 jours en arrière
 
 function openLadder(){
   // Afficher immédiatement avec le score en mémoire
@@ -1747,7 +1748,6 @@ let G={
   score:0, baseScore:0, xp:0, level:0, streak:0,
   spiritAvg:0, spiritHistory:{},
   totalAves:0,totalChapelets:0,totalRosaries:0,perfectDays:0,
-  chapeletCount:0,rosaryCount:0,
   profile:{prenom:'',nom:'',email:'',role:'',onboarded:false},
   days:{},
   homelies:{}
@@ -1820,21 +1820,35 @@ function updateLevel(){
   for(let i=0;i<LEVELS.length;i++){if(avg>=LEVELS[i].threshold)lvl=i;}
   G.level=lvl;
 }
-function dayScoreForAverage(row){
-  // Formule restreinte utilisée uniquement pour la moyenne "échelle sainte" :
-  // lecture + méditation + rosaire complet + litanies (le chapelet seul et l'Ave Maria
-  // isolé sont considérés comme déjà inclus dans un rosaire complet).
+function computeDayScore({lectures,homelie,aveCount,chapeletCount,rosaireCount,litanies}){
+  // Formule partagée : c'est EXACTEMENT le même calcul que le score du jour affiché
+  // en haut de l'écran (recalcScore). Toute action qui rapporte des points aujourd'hui
+  // compte donc aussi dans la moyenne 6 mois de l'échelle sainte.
   let s=0;
-  if(row.lectures) s+=PTS.lecture;
-  if(row.homelie) s+=PTS.homelie;
-  const ros=row.rosaire_count||0;
+  if(lectures) s+=PTS.lecture;
+  if(homelie) s+=PTS.homelie;
+  s+=(aveCount||0)*PTS.avePerAve;
+  const chap=chapeletCount||0;
+  if(chap>0){
+    const steps=[16,26,36,46,56];
+    let chapPts=0;
+    for(let i=0;i<steps.length;i++){ if(chap>=steps[i]) chapPts=(i===0)?PTS.chapFirst:(PTS.chapFirst+i*PTS.chapPerDizaine); }
+    s+=chapPts;
+  }
+  const ros=rosaireCount||0;
   if(ros>=50) s+=PTS.rosPerChapelet;
   if(ros>=100) s+=PTS.rosPerChapelet;
   if(ros>=150) s+=PTS.rosPerChapelet;
-  if(row.litanies){
-    Object.values(row.litanies).forEach(v=>{ if(v===true) s+=PTS.litSacreCoeur; });
+  if(litanies){
+    Object.values(litanies).forEach(v=>{ if(v===true) s+=PTS.litSacreCoeur; });
   }
   return s;
+}
+function dayScoreForAverage(row){
+  return computeDayScore({
+    lectures: row.lectures, homelie: row.homelie, aveCount: row.ave_count,
+    chapeletCount: row.chapelet_count, rosaireCount: row.rosaire_count, litanies: row.litanies
+  });
 }
 async function computeSpiritAverage(userId){
   const end=new Date();
@@ -1843,7 +1857,7 @@ async function computeSpiritAverage(userId){
   const history={};
   try{
     const {data}=await supa.from('daily_activity')
-      .select('date,lectures,homelie,rosaire_count,litanies')
+      .select('date,lectures,homelie,ave_count,chapelet_count,rosaire_count,litanies')
       .eq('user_id',userId)
       .gte('date',startKey);
     let total=0;
@@ -1871,50 +1885,78 @@ function renderSpiritFrise(days=30){
   }
   el.innerHTML=cells.join('');
 }
-async function recalcScore(){
-  // Recalcule le score du jour depuis zéro
-  const todayRc = dk(new Date());
-  const ds = G.days[todayRc] || {};
-  let dayScore = 0;
-  if(ds.lectures) dayScore += PTS.lecture;
-  if(ds.homelie) dayScore += PTS.homelie;
-  if(ds._aveSel) dayScore += ds._aveSel * PTS.avePerAve;
-  // Chapelet
-  const chapCount = G.chapeletCount || 0;
-  if(chapCount > 0){
-    const steps = [16,26,36,46,56];
-    let chap = 0;
-    for(let i=0;i<steps.length;i++){
-      if(chapCount >= steps[i]) chap = (i===0)?PTS.chapFirst:(PTS.chapFirst + i*PTS.chapPerDizaine);
-    }
-    dayScore += chap;
+/* ── ÉDITION DES JOURS PASSÉS (rattrapage jusqu'à 7 jours) ── */
+function isFutureDay(key){ return key>dk(today); }
+function isWithinEditWindow(key){
+  const d=new Date(today); d.setDate(d.getDate()-EDIT_WINDOW_DAYS);
+  return key>=dk(d);
+}
+function guardEditable(key){
+  if(isFutureDay(key)){ showToast("Ce jour n'est pas encore arrivé"); return false; }
+  if(!isWithinEditWindow(key)){ showToast('Modifiable jusqu\'à '+EDIT_WINDOW_DAYS+' jours en arrière seulement'); return false; }
+  return true;
+}
+async function saveActivityForDay(key){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  const ds = G.days[key] || {};
+  try {
+    await supa.from('daily_activity').upsert({
+      user_id:        user.id,
+      date:           key,
+      lectures:       ds.lectures       || false,
+      homelie:        ds.homelie        || false,
+      ave_count:      ds._aveSel        || 0,
+      chapelet_count: ds.chapeletCount  || 0,
+      rosaire_count:  ds.rosaryCount    || 0,
+      litanies:       ds.litanies       || {},
+      updated_at:     new Date().toISOString()
+    },{onConflict:'user_id,date'});
+    await saveScore();
+  } catch(e) {
+    console.error('saveActivityForDay error:', e);
+    showToast('⚠️ Erreur sauvegarde: '+e.message);
   }
-  // Rosaire
-  const rosCount = G.rosaryCount || 0;
-  if(rosCount >= 50) dayScore += PTS.rosPerChapelet;
-  if(rosCount >= 100) dayScore += PTS.rosPerChapelet;
-  if(rosCount >= 150) dayScore += PTS.rosPerChapelet;
-  // Litanies
-  if(ds.litanies){
-    Object.values(ds.litanies).forEach(v=>{ if(v===true) dayScore += 15; });
+}
+async function recalcScoreForDay(key){
+  const ds = G.days[key] || (G.days[key]={});
+  const newScore = computeDayScore({
+    lectures: ds.lectures, homelie: ds.homelie, aveCount: ds._aveSel,
+    chapeletCount: ds.chapeletCount, rosaireCount: ds.rosaryCount, litanies: ds.litanies
+  });
+  const todayKeyNow = dk(today);
+  if(key===todayKeyNow){
+    G.score = Math.max(0, G.baseScore + newScore);
+  } else {
+    // Jour passé : on ajuste le total cumulé de la différence, puis on rajoute la part d'aujourd'hui
+    const oldScore = ds._lastScore||0;
+    const delta = newScore-oldScore;
+    G.baseScore = Math.max(0, G.baseScore+delta);
+    const todayDs = G.days[todayKeyNow]||{};
+    const todayScore = computeDayScore({
+      lectures: todayDs.lectures, homelie: todayDs.homelie, aveCount: todayDs._aveSel,
+      chapeletCount: todayDs.chapeletCount, rosaireCount: todayDs.rosaryCount, litanies: todayDs.litanies
+    });
+    G.score = Math.max(0, G.baseScore+todayScore);
   }
-  G.score = G.baseScore + dayScore;
-  G.score = Math.max(0, G.score);
+  ds._lastScore = newScore;
   document.getElementById('hdr-score').textContent = G.score;
   updateLevel();
-  await saveTodayActivity();
+  await saveActivityForDay(key);
 }
+async function recalcScore(){ return recalcScoreForDay(dk(today)); }
+async function saveTodayActivity(){ return saveActivityForDay(dk(today)); }
 
 /* ── STATE HELPERS ── */
-function chapState(){return G.chapeletCount>=50?'done':G.chapeletCount>0?'prog':'none';}
-function rosState(){return G.rosaryCount>=150?'done':G.rosaryCount>0?'prog':'none';}
+function chapState(key){const ds=G.days[key]||{};const c=ds.chapeletCount||0;return c>=50?'done':c>0?'prog':'none';}
+function rosState(key){const ds=G.days[key]||{};const c=ds.rosaryCount||0;return c>=150?'done':c>0?'prog':'none';}
 function dotClass(s){if(s===true||s==='done')return ' done';if(s==='prog')return ' prog';return '';}
 
 /* ── FEED ── */
 function buildFeed(){
   const feed=document.getElementById('feed');feed.innerHTML='';
-  const d0=new Date(today);d0.setDate(d0.getDate()-3);
-  for(let i=0;i<10;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
+  const d0=new Date(today);d0.setDate(d0.getDate()-EDIT_WINDOW_DAYS);
+  for(let i=0;i<EDIT_WINDOW_DAYS+7;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
   document.getElementById('hdr-date').textContent=DAYS[today.getDay()]+' '+today.getDate()+' '+MONTHS_LONG[today.getMonth()];
   setTimeout(()=>{const el=document.getElementById('card-'+dk(today));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
@@ -1932,7 +1974,7 @@ function buildCard(d){
     }).catch(()=>{});
     feast = ''; // chargement en cours
   }
-  const chapS=chapState();const rosS=rosState();
+  const chapS=chapState(key);const rosS=rosState(key);
   if(!ds.litanies) ds.litanies={};
   const litS=Object.values(ds.litanies).some(v=>v===true);
   const states=[ds.lectures,ds.homelie,ds.ave,chapS,rosS,litS];
@@ -1947,7 +1989,7 @@ function buildCard(d){
   <div class="day-hdr-left">
     <div class="day-num-badge"><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>
     <div>
-      <div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}</div>
+      <div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}${isFutureDay(key)?' 🔒':''}</div>
       <div class="dfeast">${feast}</div>
       ${isToday?`<div class="community-counter"><span class="community-dot"></span><span id="community-count">1 247 fidèles prient aujourd'hui</span></div>`:''}
     </div>
@@ -1990,7 +2032,7 @@ function secAve(key,ds){
 }
 
 function secChapelet(key,dow){
-  const count=G.chapeletCount;const isDone=count>=50;const inProg=count>0&&count<50;
+  const count=(G.days[key]||{}).chapeletCount||0;const isDone=count>=50;const inProg=count>0&&count<50;
   const beads=CHAP_STEPS.map((v,i)=>{
     const stepDone=count>=v;
     const isFirst=i===0;
@@ -2007,7 +2049,7 @@ function secChapelet(key,dow){
 }
 
 function secRosaire(key){
-  const count=G.rosaryCount;const isDone=count>=150;const inProg=count>0&&count<150;
+  const count=(G.days[key]||{}).rosaryCount||0;const isDone=count>=150;const inProg=count>0&&count<150;
   const beads=ROS_STEPS.map((o,i)=>{
     const stepDone=count>=o.v;
     return `<div class="bead${stepDone?' done':''}" onclick="${stepDone?`revertRos(${o.v},'${key}')`:`addRosaire(${o.v},'${key}')`}">${i+1}</div>`;
@@ -2091,6 +2133,7 @@ function updateReaderButtons(isDone){
   }
 }
 async function setReaderState(done){
+  if(!guardEditable(readerKey)) return;
   const ds=G.days[readerKey]||(G.days[readerKey]={});
   if(readerType.startsWith('litanie:')){
     const litId=readerType.split(':')[1];
@@ -2101,7 +2144,7 @@ async function setReaderState(done){
     if(done&&!wasDoneLit){ds.litanies[litId]=true;showToast('Litanie priée +'+litPts+' pts');}
     else if(!done&&wasDoneLit){delete ds.litanies[litId];showToast('-'+litPts+' pts');}
     updateReaderButtons(done); refreshCard(readerKey);
-    await recalcScore(); return;
+    await recalcScoreForDay(readerKey); return;
   }
   const isLecture=readerType==='lecture';
   const wasDone=isLecture?ds.lectures:ds.homelie;
@@ -2113,11 +2156,12 @@ async function setReaderState(done){
     else ds.homelie=false;
   }
   updateReaderButtons(done); refreshCard(readerKey);
-  await recalcScore();
+  await recalcScoreForDay(readerKey);
 }
 
 /* ── ACTIONS ── */
 async function selAve(key,v){
+  if(!guardEditable(key)) return;
   const ds=G.days[key];
   if(!ds) return;
   const current = ds._aveSel||0;
@@ -2131,13 +2175,13 @@ async function selAve(key,v){
     G.totalAves = Math.max(0, G.totalAves - (current - prevVal));
     showToast('← '+(current-prevVal)+' Ave retirés');
     refreshCard(key);
-    await recalcScore();
+    await recalcScoreForDay(key);
     return;
   }
 
   // On ne peut pas reculer
   if(v < current){
-    showToast('Vous avez déjà récité '+current+' Ave aujourd\'hui');
+    showToast('Vous avez déjà récité '+current+' Ave ce jour-là');
     return;
   }
 
@@ -2149,30 +2193,38 @@ async function selAve(key,v){
   else ds.ave = false;
   showToast('+'+gained+' Ave Maria · total '+v);
   refreshCard(key);
-  await recalcScore();
+  await recalcScoreForDay(key);
 }
 function doAve(key){
+  if(!guardEditable(key)) return;
   const ds=G.days[key];if(ds.ave)return;
   const n=ds._aveSel||0;if(!n){showToast('Choisissez un nombre d\'Ave Maria');return;}
-  ds.ave=true;G.totalAves+=n;refreshCard(key);showToast('Ave Maria +'+n+' pts');recalcScore();
+  ds.ave=true;G.totalAves+=n;refreshCard(key);showToast('Ave Maria +'+n+' pts');recalcScoreForDay(key);
 }
 async function addChapelet(v,key){
-  if(G.chapeletCount>=50||G.chapeletCount>=v)return;
-  G.chapeletCount=v;G.totalAves+=10;
+  if(!guardEditable(key)) return;
+  const ds=G.days[key]||(G.days[key]={});
+  const count=ds.chapeletCount||0;
+  if(count>=50||count>=v)return;
+  ds.chapeletCount=v;G.totalAves+=10;
   const prev=CHAP_STEPS.filter(x=>x<v).pop()||0;
   const pts = prev===0 ? PTS.chapFirst : PTS.chapPerDizaine;
   showToast('Dizaine récitée +'+pts+' pts');
   refreshAllCards();
-  await recalcScore();
-  if(G.chapeletCount>=50){G.totalChapelets++;setTimeout(()=>{refreshAllCards();},1500);}
+  await recalcScoreForDay(key);
+  if(ds.chapeletCount>=50){G.totalChapelets++;setTimeout(()=>{refreshAllCards();},1500);}
 }
-function addRosaire(v,key){
-  if(G.rosaryCount>=150||G.rosaryCount>=v)return;
-  G.rosaryCount=v;G.totalAves+=50;
+async function addRosaire(v,key){
+  if(!guardEditable(key)) return;
+  const ds=G.days[key]||(G.days[key]={});
+  const count=ds.rosaryCount||0;
+  if(count>=150||count>=v)return;
+  ds.rosaryCount=v;G.totalAves+=50;
   const pts=Math.round(PTS.rosPerChapelet);
-  addScore(pts,'Chapelet du rosaire +'+pts+' pts');
-  if(G.rosaryCount>=150){G.totalRosaries++;setTimeout(()=>{refreshAllCards();},1500);}
+  showToast('Chapelet du rosaire +'+pts+' pts');
   refreshAllCards();
+  await recalcScoreForDay(key);
+  if(ds.rosaryCount>=150){G.totalRosaries++;setTimeout(()=>{refreshAllCards();},1500);}
 }
 
 /* ── CONTRIBUTEUR ── */
@@ -2363,7 +2415,6 @@ function goAuthScreen(screen){
 async function doLogout(){
   await supa.auth.signOut();
   G.score=0; G.level=0; G.streak=0;
-  G.chapeletCount=0; G.rosaryCount=0;
   G.profile={prenom:'',nom:'',email:'',role:'',onboarded:false};
   G.days={}; G.homelies={};
   document.getElementById('hdr-score').textContent='0';
@@ -2455,7 +2506,7 @@ async function loadUserData(user){
       document.getElementById('hdr-score').textContent = G.score;
     }
     // Load today's activity
-    await loadTodayActivity(user.id);
+    await loadRecentActivity(user.id);
     // Load published homélies
     await loadHomelies();
     // Re-render feed with loaded data
@@ -2498,26 +2549,31 @@ async function saveScore(){
   else console.log('saveScore OK:', G.score);
 }
 
-async function loadTodayActivity(userId){
-  const today = dk(new Date());
-  const {data} = await supa.from('daily_activity').select('*').eq('user_id',userId).eq('date',today).single();
-  if(data){
-    if(!G.days[today]) G.days[today]={};
-    const ds = G.days[today];
-    ds.lectures        = data.lectures || false;
-    ds.homelie         = data.homelie  || false;
-    ds._aveSel         = data.ave_count || 0;
-    ds.ave             = data.ave_count > 0;
-    G.chapeletCount    = data.chapelet_count || 0;
-    G.rosaryCount      = data.rosaire_count  || 0;
-    ds.litanies        = data.litanies || {};
-    // Recalculer le score du jour pour initialiser baseScore correctement
-    let dayScore = 0;
-    if(ds.lectures) dayScore += PTS.lecture;
-    if(ds.homelie) dayScore += PTS.homelie;
-    if(ds._aveSel) dayScore += ds._aveSel * PTS.avePerAve;
-    G.baseScore = Math.max(0, G.score - dayScore);
-  }
+async function loadRecentActivity(userId){
+  // Charge toute la fenêtre éditable (aujourd'hui + 7 jours en arrière) en une fois,
+  // pour permettre le rattrapage rétroactif sans écraser des données déjà enregistrées.
+  const todayKeyNow = dk(today);
+  const start = new Date(today); start.setDate(start.getDate()-EDIT_WINDOW_DAYS);
+  const startKey = dk(start);
+  const {data} = await supa.from('daily_activity').select('*').eq('user_id',userId).gte('date',startKey).lte('date',todayKeyNow);
+  if(data) data.forEach(row=>{
+    if(!G.days[row.date]) G.days[row.date]={};
+    const ds = G.days[row.date];
+    ds.lectures        = row.lectures || false;
+    ds.homelie         = row.homelie  || false;
+    ds._aveSel         = row.ave_count || 0;
+    ds.ave             = row.ave_count > 0;
+    ds.chapeletCount   = row.chapelet_count || 0;
+    ds.rosaryCount     = row.rosaire_count  || 0;
+    ds.litanies        = row.litanies || {};
+    ds._lastScore      = computeDayScore({
+      lectures: ds.lectures, homelie: ds.homelie, aveCount: ds._aveSel,
+      chapeletCount: ds.chapeletCount, rosaireCount: ds.rosaryCount, litanies: ds.litanies
+    });
+  });
+  // baseScore = total cumulé moins la part d'aujourd'hui
+  const todayDs = G.days[todayKeyNow]||{};
+  G.baseScore = Math.max(0, G.score - (todayDs._lastScore||0));
 }
 
 async function loadHomelies(){
@@ -2554,31 +2610,6 @@ async function saveHomelieToSupabase(key, content, published){
       updated_at: new Date().toISOString()
     }, {onConflict:'date'});
   } catch(e) { console.error('saveHomelie error:', e); }
-}
-
-async function saveTodayActivity(){
-  const {data:{user}} = await supa.auth.getUser();
-  if(!user) return;
-  const today = dk(new Date());
-  if(!G.days[today]) G.days[today]={};
-  const ds = G.days[today];
-  try {
-    await supa.from('daily_activity').upsert({
-      user_id:        user.id,
-      date:           today,
-      lectures:       ds.lectures       || false,
-      homelie:        ds.homelie        || false,
-      ave_count:      ds._aveSel        || 0,
-      chapelet_count: G.chapeletCount   || 0,
-      rosaire_count:  G.rosaryCount     || 0,
-      litanies:       ds.litanies       || {},
-      updated_at:     new Date().toISOString()
-    },{onConflict:'user_id,date'});
-    await saveScore();
-  } catch(e) {
-    console.error('saveTodayActivity error:', e);
-    showToast('⚠️ Erreur sauvegarde: '+e.message);
-  }
 }
 
 async function fetchDailyCounter(){
@@ -2640,7 +2671,6 @@ supa.auth.getSession().then(({data:{session}})=>{
 supa.auth.onAuthStateChange((event, session) => {
   if(event === 'SIGNED_OUT') {
     G.days = {}; G.score = 0;
-    G.chapeletCount = 0; G.rosaryCount = 0;
     G.profile = {prenom:'',nom:'',email:'',role:'',onboarded:false};
     document.getElementById('hdr-score').textContent = '0';
     renderFeed();
@@ -2706,30 +2736,33 @@ function toggleLec(key){ openReader(key,'lecture'); }
 function toggleHom(key){ openReader(key,'homelie'); }
 // Cancel Ave
 function cancelAve(key){
+  if(!guardEditable(key)) return;
   const ds=G.days[key];if(!ds||!ds.ave)return;
   const n=ds._aveSel||1; ds.ave=false; ds._aveSel=0; G.totalAves=Math.max(0,G.totalAves-n);
   refreshCard(key); showToast('← Ave Maria annulés');
-  recalcScore();
+  recalcScoreForDay(key);
 }
 // Undo chapelet one step
 function undoChap(key){
-  if(G.chapeletCount<=0)return;
-  const prev=CHAP_STEPS.filter(v=>v<G.chapeletCount).pop()||0;
-  const removedAves=G.chapeletCount-prev; G.chapeletCount=prev;
+  if(!guardEditable(key)) return;
+  const ds=G.days[key]||{}; const count=ds.chapeletCount||0;
+  if(count<=0)return;
+  const prev=CHAP_STEPS.filter(v=>v<count).pop()||0;
+  const removedAves=count-prev; ds.chapeletCount=prev;
   G.totalAves=Math.max(0,G.totalAves-removedAves);
-  const removedDizaines=removedAves/10;
-  G.score=Math.max(0,G.score-Math.round(removedDizaines*PTS.chapPerDizaine)); document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards(); showToast('← Chapelet : étape annulée');
+  recalcScoreForDay(key);
 }
 // Undo rosaire one step
 function undoRos(key){
-  if(G.rosaryCount<=0)return;
-  const prev=ROS_STEPS.map(o=>o.v).filter(v=>v<G.rosaryCount).pop()||0;
-  const removedAves=G.rosaryCount-prev; G.rosaryCount=prev;
+  if(!guardEditable(key)) return;
+  const ds=G.days[key]||{}; const count=ds.rosaryCount||0;
+  if(count<=0)return;
+  const prev=ROS_STEPS.map(o=>o.v).filter(v=>v<count).pop()||0;
+  const removedAves=count-prev; ds.rosaryCount=prev;
   G.totalAves=Math.max(0,G.totalAves-removedAves);
-  const removedChapelets=removedAves/50;
-  G.score=Math.max(0,G.score-Math.round(removedChapelets*PTS.rosPerChapelet)); document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards(); showToast('← Rosaire : étape annulée');
+  recalcScoreForDay(key);
 }
 
 
@@ -2867,29 +2900,28 @@ function removeContrib(i){
 
 
 function revertChap(v, key){
-  if(G.chapeletCount<=0||G.chapeletCount<v)return;
+  if(!guardEditable(key)) return;
+  const ds=G.days[key]||{}; const count=ds.chapeletCount||0;
+  if(count<=0||count<v)return;
   const prev=CHAP_STEPS.filter(x=>x<v).pop()||0;
-  const totalRemovedAves=G.chapeletCount-prev;
-  G.chapeletCount=prev;
+  const totalRemovedAves=count-prev;
+  ds.chapeletCount=prev;
   G.totalAves=Math.max(0,G.totalAves-totalRemovedAves);
-  const removedDizaines=totalRemovedAves/10;
-  G.score=Math.max(0,G.score-Math.round(removedDizaines*PTS.chapPerDizaine));
-  document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards();
   showToast('← Chapelet revenu à '+prev+' Ave');
-  recalcScore();
+  recalcScoreForDay(key);
 }
 function revertRos(v, key){
-  if(G.rosaryCount<=0||G.rosaryCount<v)return;
+  if(!guardEditable(key)) return;
+  const ds=G.days[key]||{}; const count=ds.rosaryCount||0;
+  if(count<=0||count<v)return;
   const prev=ROS_STEPS.map(o=>o.v).filter(x=>x<v).pop()||0;
-  const totalRemovedAves=G.rosaryCount-prev;
-  G.rosaryCount=prev;
+  const totalRemovedAves=count-prev;
+  ds.rosaryCount=prev;
   G.totalAves=Math.max(0,G.totalAves-totalRemovedAves);
-  const removedChapelets=totalRemovedAves/50;
-  G.score=Math.max(0,G.score-Math.round(removedChapelets*PTS.rosPerChapelet));
-  document.getElementById('hdr-score').textContent=G.score;
   refreshAllCards();
   showToast('← Rosaire revenu à '+prev+' Ave');
+  recalcScoreForDay(key);
 }
 
 
