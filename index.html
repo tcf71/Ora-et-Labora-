@@ -414,6 +414,7 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 .progress-label{font-size:10px;color:var(--muted);margin-top:6px;}
 .ladder-wrap{position:relative;padding:30px 0 10px;}
 .ladder-rail{position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--border),#c9a84c);transform:translateX(-50%);border-radius:2px;}
+.ladder-rail-fill{position:absolute;left:50%;bottom:0;width:3px;height:0;background:linear-gradient(to top,#2f7a3f,#7bc98d);transform:translateX(-50%);border-radius:2px;transition:height 0.7s ease;}
 .rung{position:relative;display:flex;align-items:center;margin-bottom:36px;}
 .rung:last-child{margin-bottom:0;}
 .rung-card{flex:1;background:rgba(255,255,255,0.65);border:1.5px solid rgba(255,180,120,0.3);border-radius:14px;padding:12px 14px;}
@@ -523,6 +524,7 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 
     <div class="ladder-wrap">
       <div class="ladder-rail"></div>
+      <div class="ladder-rail-fill" id="ladder-rail-fill"></div>
       <div id="ladder-rungs"></div>
     </div>
   </div>
@@ -1126,10 +1128,11 @@ function renderLadder(){
   document.getElementById('ladder-level-name').textContent=LEVELS[currentIdx].name;
   document.getElementById('ladder-score').textContent=avg;
   const next=LEVELS[currentIdx+1];
+  let pct=100;
   if(next){
     const span=next.threshold-LEVELS[currentIdx].threshold;
     const prog=avg-LEVELS[currentIdx].threshold;
-    const pct=Math.min(100,Math.round(prog/span*100));
+    pct=Math.min(100,Math.round(prog/span*100));
     document.getElementById('ladder-progress-fill').style.width=pct+'%';
     document.getElementById('ladder-progress-label').innerHTML=(next.threshold-avg)+' pts/jour (moy.) avant <strong>'+next.name+'</strong>';
   } else {
@@ -1142,7 +1145,7 @@ function renderLadder(){
     const side=i%2===0?'left':'right';
     const state=i>currentIdx?'locked':(i===currentIdx?'current':'done');
     const voieHtml=lvl.voie?`<div class="voie-label">${lvl.voie}</div>`:'';
-    return `${voieHtml}<div class="rung ${state} ${side}">
+    return `${voieHtml}<div class="rung ${state} ${side}" data-idx="${i}">
       <div class="rung-card">
         <div class="rung-name">${lvl.name}</div>
         <div class="rung-pts">${lvl.threshold} pts/j (moy.)</div>
@@ -1152,6 +1155,30 @@ function renderLadder(){
     </div>`;
   }).join('');
   document.getElementById('ladder-rungs').innerHTML=html;
+  updateRailFill(currentIdx,pct);
+}
+function updateRailFill(currentIdx,pct){
+  // Thermomètre : remplit le rail vertical du bas (Novice) vers le haut,
+  // proportionnellement à la progression entre le palier actuel et le suivant.
+  const wrap=document.querySelector('.ladder-wrap');
+  const fillEl=document.getElementById('ladder-rail-fill');
+  if(!wrap||!fillEl) return;
+  const currentNode=wrap.querySelector(`.rung[data-idx="${currentIdx}"] .rung-node`);
+  if(!currentNode) return;
+  const wrapRect=wrap.getBoundingClientRect();
+  if(wrapRect.height<=0) return; // overlay pas encore visible, on réessaiera au prochain render
+  const railBottom=wrapRect.bottom;
+  const currentRect=currentNode.getBoundingClientRect();
+  const currentCenterY=currentRect.top+currentRect.height/2;
+  const nextNode=wrap.querySelector(`.rung[data-idx="${currentIdx+1}"] .rung-node`);
+  let targetY=currentCenterY;
+  if(nextNode){
+    const nextRect=nextNode.getBoundingClientRect();
+    const nextCenterY=nextRect.top+nextRect.height/2;
+    targetY=currentCenterY-(currentCenterY-nextCenterY)*(pct/100);
+  }
+  const fillHeight=Math.max(0,railBottom-targetY);
+  fillEl.style.height=fillHeight+'px';
 }
 
 
