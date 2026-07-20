@@ -484,6 +484,13 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 .groupe-code-input:focus{border-color:var(--warm-orange);}
 .groupe-code-input::placeholder{color:rgba(200,150,100,0.4);letter-spacing:0.1em;}
 </style>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
 </head>
 <body>
 
