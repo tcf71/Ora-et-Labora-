@@ -2026,8 +2026,10 @@ function dotClass(s){if(s===true||s==='done')return ' done';if(s==='prog')return
 /* ── FEED ── */
 function buildFeed(){
   const feed=document.getElementById('feed');feed.innerHTML='';
+  const isAdminFeed = G.profile.role === 'admin';
+  const forwardDays = isAdminFeed ? 90 : 7; // admin : accès étendu aux jours à venir (relecture/préparation)
   const d0=new Date(today);d0.setDate(d0.getDate()-EDIT_WINDOW_DAYS);
-  for(let i=0;i<EDIT_WINDOW_DAYS+7;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
+  for(let i=0;i<EDIT_WINDOW_DAYS+forwardDays;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
   document.getElementById('hdr-date').textContent=DAYS[today.getDay()]+' '+today.getDate()+' '+MONTHS_LONG[today.getMonth()];
   setTimeout(()=>{const el=document.getElementById('card-'+dk(today));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
