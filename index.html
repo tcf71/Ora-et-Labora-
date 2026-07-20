@@ -1696,11 +1696,39 @@ async function fetchCalendarMonth(yearMonth) {
   } catch(e) { return {}; }
 }
 
+// ── Source prioritaire : lectures du rite de 1962 (La Porte Latine), stockées dans Supabase ──
+async function fetchLiturgyFromSupabase(key) {
+  try {
+    const { data, error } = await supa.from('liturgical_readings').select('*').eq('date', key).maybeSingle();
+    if (error || !data) return null;
+    let fullText = '';
+    if (data.epistle_text) {
+      fullText += `<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">${data.epistle_header || 'Épître'}</h3><p>${data.epistle_text.replace(/\n/g,'</p><p>')}</p>`;
+    }
+    if (data.gospel_text) {
+      fullText += `<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">${data.gospel_header || 'Évangile'}</h3><p>${data.gospel_text.replace(/\n/g,'</p><p>')}</p>`;
+    }
+    if (!fullText) return null;
+    const ref = [data.epistle_header, data.gospel_header].filter(Boolean).join(' · ');
+    return {
+      feast: data.feast || '',
+      ref,
+      epitre: data.epistle_header || '',
+      text: fullText,
+      homelie: ''
+    };
+  } catch(e) { return null; }
+}
+
 async function fetchLiturgy(key) {
   if (MISSALE_CACHE[key]) return MISSALE_CACHE[key];
   // Fête depuis la table statique
   const staticEntry = LITURGY[key];
   const feast = staticEntry?.feast || '';
+  // 1) Lectures 1962 pré-chargées dans Supabase (La Porte Latine) — prioritaires si disponibles
+  const supaResult = await fetchLiturgyFromSupabase(key);
+  if (supaResult) { MISSALE_CACHE[key] = supaResult; return supaResult; }
+  // 2) Fallback : API Missale Meum
   try {
     const res = await fetch(`https://www.missalemeum.com/fr/api/v5/propers/${key}`);
     if (!res.ok) throw new Error('API error');
