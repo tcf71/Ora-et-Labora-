@@ -1042,8 +1042,7 @@ textarea.homelie-input:focus{border-color:var(--accent);}
           <option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option>
         </select>
       </div>
-      <div class="field-row"><div class="field-label">Code d'accès contributeur</div><input class="field-input" id="new-contrib-code" placeholder="ex: PIERRE2026"></div>
-      <button class="cta-btn" onclick="addContrib()">Créer le compte</button>
+      <button class="cta-btn" onclick="inviteContrib()">Envoyer l'invitation</button>
     </div>
     <div class="compte-section">
       <div class="compte-section-title">📖 Méditations publiées</div>
@@ -2565,7 +2564,11 @@ async function loadUserData(user){
     const {data:profile} = await supa.from('profiles').select('*').eq('id',user.id).single();
     if(profile){
       G.profile.prenom = profile.prenom || '';
+      G.profile.nom = profile.nom || '';
       G.profile.createdAt = profile.created_at || null;
+      // Rôle persisté en base (contributeur/admin) — le check owner ci-dessus reste prioritaire
+      if(profile.role && G.profile.role !== 'admin') G.profile.role = profile.role;
+      if(profile.dow !== null && profile.dow !== undefined) G.profile.dow = profile.dow;
       G.score = profile.score || 0;
       G.baseScore = profile.score || 0;
       G.level = profile.level ?? 0;
@@ -2697,8 +2700,11 @@ function subscribeToCounter(){
     .subscribe();
 }
 
-// Gérer le reset de mot de passe via le lien email
-if(window.location.hash.includes('access_token') && window.location.hash.includes('type=recovery')) {
+// Gérer le reset de mot de passe (et l'acceptation d'invitation contributeur)
+// via le lien email — Supabase utilise type=recovery pour un reset classique
+// et type=invite pour une invitation ; dans les deux cas, l'utilisateur doit
+// juste choisir un mot de passe, donc on réutilise le même écran.
+if(window.location.hash.includes('access_token') && (window.location.hash.includes('type=recovery') || window.location.hash.includes('type=invite'))) {
   document.querySelectorAll('.onb-overlay').forEach(el => el.classList.remove('open'));
   document.getElementById('reset-password-screen').classList.add('open');
 }
@@ -2832,20 +2838,10 @@ function undoRos(key){
 }
 
 
-/* ── SECRET ACCESS ── */
-// Codes définis ici — à changer avant prod
+/* ── SECRET ACCESS (admin uniquement — les contributeurs sont invités par email) ── */
 const ADMIN_CODE = 'ad_min';
-const CONTRIB_CODES = {
-  'PIERRE-LUNDI':   {name:'Père Pierre', dow:1},
-  'MARTIN-MARDI':   {name:'Père Martin', dow:2},
-  'THOMAS-MERCREDI':{name:'Père Thomas', dow:3},
-  'JEAN-JEUDI':     {name:'Père Jean', dow:4},
-  'ANDRE-VENDREDI': {name:'Père André', dow:5},
-  'BERNARD-SAMEDI': {name:'Père Bernard', dow:6},
-  'FRANCOIS-DIMANCHE':{name:'Père François', dow:0},
-};
 
-function checkSecretCode(){
+async function checkSecretCode(){
   const code = document.getElementById('secret-code').value.trim().toUpperCase();
   if(code === ADMIN_CODE){
     G.profile.role='admin';
@@ -2853,15 +2849,9 @@ function checkSecretCode(){
     document.getElementById('contrib-access').style.display='none';
     document.getElementById('secret-access').style.display='none';
     showToast('⚙️ Mode admin activé');
-  } else if(CONTRIB_CODES[code]){
-    G.profile.role='contributeur';
-    G.profile.dow=CONTRIB_CODES[code].dow;
-    G.profile.prenom=CONTRIB_CODES[code].name;
-    document.getElementById('contrib-access').style.display='block';
-    document.getElementById('admin-access').style.display='none';
-    document.getElementById('secret-access').style.display='none';
-    showToast(' Accès contributeur activé');
-    renderCompte();
+    // Persister le rôle pour que ça survive à une reconnexion
+    const {data:{user}} = await supa.auth.getUser();
+    if(user) await supa.from('profiles').upsert({id:user.id, role:'admin'}, {onConflict:'id'});
   } else{
     showToast('Code invalide');
     document.getElementById('secret-code').value='';
@@ -2869,34 +2859,40 @@ function checkSecretCode(){
 }
 
 /* ── ADMIN ── */
-// Liste dynamique des contributeurs (admin peut en ajouter)
-let CONTRIBS = [
-  {name:'Père Pierre', email:'', dow:1, code:'PIERRE-LUNDI'},
-  {name:'Père Martin', email:'', dow:2, code:'MARTIN-MARDI'},
-  {name:'Père Thomas', email:'', dow:3, code:'THOMAS-MERCREDI'},
-  {name:'Père Jean', email:'', dow:4, code:'JEAN-JEUDI'},
-  {name:'Père André', email:'', dow:5, code:'ANDRE-VENDREDI'},
-  {name:'Père Bernard', email:'', dow:6, code:'BERNARD-SAMEDI'},
-  {name:'Père François', email:'', dow:0, code:'FRANCOIS-DIMANCHE'},
-];
+// Liste des contributeurs — chargée depuis Supabase (profiles où role='contributeur')
+let CONTRIBS = [];
 const DAYS_FULL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
+async function loadContribs(){
+  const {data, error} = await supa.from('profiles').select('id,prenom,nom,dow,email').eq('role','contributeur');
+  if(error){ console.error('loadContribs error:', error.message); return; }
+  CONTRIBS = data || [];
+}
+
 function renderAdmin(){
+  loadContribs().then(renderAdminList);
+  renderAdminList();
+}
+
+function renderAdminList(){
   // Contributeurs
   const list=document.getElementById('admin-contrib-list');
   if(!list)return;
-  list.innerHTML=CONTRIBS.map((c,i)=>`
-    <div class="contrib-row">
-      <div class="contrib-info">
-        <div class="cn">${c.name}</div>
-        <div class="cd">${DAYS_FULL[c.dow]} · Code : ${c.code}</div>
-        ${c.email?`<div class="cd">${c.email}</div>`:''}
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span class="contrib-badge">${DAYS_FULL[c.dow]}</span>
-        <button class="del-btn" onclick="removeContrib(${i})">✕</button>
-      </div>
-    </div>`).join('');
+  if(CONTRIBS.length===0){
+    list.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0;">Aucun contributeur pour l\'instant.</div>';
+  } else {
+    list.innerHTML=CONTRIBS.map((c)=>`
+      <div class="contrib-row">
+        <div class="contrib-info">
+          <div class="cn">${(c.prenom||'')+' '+(c.nom||'')}</div>
+          <div class="cd">${DAYS_FULL[c.dow]??''}${c.email?' · '+c.email:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="contrib-badge">${DAYS_FULL[c.dow]??''}</span>
+          <button class="del-btn" onclick="removeContrib('${c.id}')">✕</button>
+        </div>
+      </div>`).join('');
+  }
 
   // Homélies publiées
   const homList=document.getElementById('admin-homelies-list');
@@ -2940,28 +2936,45 @@ function showAddContrib(){
   f.style.display=f.style.display==='none'?'block':'none';
 }
 
-function addContrib(){
-  const name=document.getElementById('new-contrib-name').value.trim();
+async function inviteContrib(){
+  const nameFull=document.getElementById('new-contrib-name').value.trim();
   const email=document.getElementById('new-contrib-email').value.trim();
   const dow=parseInt(document.getElementById('new-contrib-dow').value);
-  const code=document.getElementById('new-contrib-code').value.trim().toUpperCase();
-  if(!name||!code){showToast('Nom et code obligatoires');return;}
-  CONTRIBS.push({name,email,dow,code});
-  CONTRIB_CODES[code]={name,dow};
-  document.getElementById('add-contrib-form').style.display='none';
-  document.getElementById('new-contrib-name').value='';
-  document.getElementById('new-contrib-email').value='';
-  document.getElementById('new-contrib-code').value='';
-  renderAdmin();
-  showToast(' Contributeur ajouté');
+  if(!nameFull||!email){showToast('Nom et email obligatoires');return;}
+  const [prenom,...rest]=nameFull.split(' ');
+  const nom=rest.join(' ');
+  showToast('Envoi de l\'invitation…');
+  try{
+    const {data:{session}} = await supa.auth.getSession();
+    if(!session){showToast('Session expirée, reconnectez-vous');return;}
+    const res = await fetch(`${SUPA_URL}/functions/v1/invite-contributor`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+session.access_token
+      },
+      body: JSON.stringify({email, prenom, nom, dow})
+    });
+    const result = await res.json();
+    if(!res.ok){showToast('Erreur : '+(result.error||'inconnue'));return;}
+    document.getElementById('add-contrib-form').style.display='none';
+    document.getElementById('new-contrib-name').value='';
+    document.getElementById('new-contrib-email').value='';
+    await loadContribs();
+    renderAdminList();
+    showToast('✅ Invitation envoyée à '+email);
+  }catch(e){
+    showToast('Erreur réseau : '+e.message);
+  }
 }
 
-function removeContrib(i){
-  const c=CONTRIBS[i];
-  delete CONTRIB_CODES[c.code];
-  CONTRIBS.splice(i,1);
-  renderAdmin();
-  showToast('Contributeur supprimé');
+async function removeContrib(id){
+  if(!confirm('Retirer le rôle contributeur à cette personne ?'))return;
+  const {error} = await supa.from('profiles').update({role:'', dow:null}).eq('id', id);
+  if(error){showToast('Erreur : '+error.message);return;}
+  await loadContribs();
+  renderAdminList();
+  showToast('Contributeur retiré');
 }
 
 
