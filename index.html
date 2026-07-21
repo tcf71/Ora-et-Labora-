@@ -2176,7 +2176,7 @@ function buildCard(d){
     <div>
       <div class="dname">${isToday?'Aujourd\'hui — ':''} ${DAYS[dow]}${isFutureDay(key)?' 🔒':''}</div>
       <div class="dfeast">${feast}</div>
-      ${isToday?`<div class="community-counter"><span class="community-dot"></span><span id="community-count">1 247 fidèles prient aujourd'hui</span></div>`:''}
+      ${isToday?`<div class="community-counter"><span class="community-dot"></span><span id="community-count">…</span></div>`:''}
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
@@ -2807,15 +2807,17 @@ async function saveHomelieToSupabase(key, content, published){
 
 async function fetchDailyCounter(){
   const today = dk(new Date());
-  const {data} = await supa.from('daily_counter').select('count').eq('date',today).single();
-  if(data){
-    const el = document.getElementById('community-count');
-    if(el) el.textContent = data.count.toLocaleString('fr-FR') + ' fidèles prient aujourd\'hui';
-  }
+  const {data, error} = await supa.from('daily_counter').select('count').eq('date',today).maybeSingle();
+  if(error) console.error('fetchDailyCounter error:', error.message);
+  const count = data?.count || 0;
+  const el = document.getElementById('community-count');
+  if(el) el.textContent = count.toLocaleString('fr-FR') + ' fidèles prient aujourd\'hui';
 }
 
+let _dailyCounterChannel = null;
 function subscribeToCounter(){
-  supa.channel('daily_counter')
+  if(_dailyCounterChannel) return; // déjà abonné dans cette session, on ne recrée pas le canal
+  _dailyCounterChannel = supa.channel('daily_counter')
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'daily_counter'},
       payload => {
         const el = document.getElementById('community-count');
