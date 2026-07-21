@@ -85,6 +85,8 @@ html,body{background:#ffffff;min-height:100vh;font-family:-apple-system,'Segoe U
 .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,111,89,0.5);transition:background 0.3s;}
 .dot.done{background:var(--done-border);}
 .dot.prog{background:var(--warm-yellow);}
+.day-score{font-size:11px;font-weight:800;color:var(--accent);white-space:nowrap;}
+.day-card.complete .day-score{color:var(--done-text);}
 .day-preview{padding:7px 14px 10px;font-size:11px;color:var(--muted);font-style:italic;display:none;}
 .day-card.collapsed .day-preview{display:block;}
 .day-body{display:block;}
@@ -775,10 +777,11 @@ if ('serviceWorker' in navigator) {
     <div class="compte-section">
       <div class="compte-section-title">Barème de points</div>
       <div style="font-size:14px;color:var(--muted);line-height:1.9;">
-        <b style="color:var(--text);">Gains :</b> Lecture +15 · Méditation +20 · Ave Maria +1/Ave<br>
-        Chapelet +2/Ave · Bonus chapelet complet +40<br>
-        Bonus rosaire complet +120<br><br>
-        <b style="color:var(--red-text);">Pénalités :</b> Jour sans prière −50 · Jour incomplet −10
+        <b style="color:var(--text);">Gains :</b> Lecture +14 · Méditation +21 · Ave Maria +1/Ave<br>
+        Chapelet (5 dizaines) : de +16 à +56 selon l'avancement<br>
+        Rosaire complet (3 chapelets) : +56 par tiers, jusqu'à +168<br>
+        Chaque litanie récitée : +15 (jusqu'à +60/jour)<br><br>
+        Le niveau de l'échelle sainte se calcule sur la <b style="color:var(--text);">moyenne</b> de vos points gagnés depuis votre inscription (plafonnée à 6 mois) — un jour sans prière compte simplement pour 0 point, sans pénalité.
       </div>
     </div>
     <!-- Code d'accès secret — visible par tous mais ne révèle rien -->
@@ -2067,6 +2070,7 @@ async function buildFeed(){
 function buildCard(d){
   const key=dk(d);if(!G.days[key])G.days[key]={};
   const ds=G.days[key];const r=getLiturgy(key);const isToday=key===dk(today);const dow=d.getDay();
+  const dayScore=computeDayScore({lectures:ds.lectures,homelie:ds.homelie,aveCount:ds._aveSel,chapeletCount:ds.chapeletCount,rosaireCount:ds.rosaryCount,litanies:ds.litanies});
   const fkey=d.getDate()+''+(d.getMonth()+1);
   // Fête : cache Missale Meum en priorité, sinon FEASTS local, sinon charge en async
   let feast = (MISSALE_CACHE[key]?.feast) || FEASTS[fkey] || '';
@@ -2107,6 +2111,7 @@ function buildCard(d){
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
+    <div class="day-score" id="score-${key}">${dayScore} pt${dayScore===1?'':'s'}</div>
     <div class="day-progress-dots">${dots}</div>
     <span class="chev" id="chev-${key}">›</span>
   </div>
