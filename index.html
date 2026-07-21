@@ -1726,6 +1726,32 @@ async function fetchLiturgyFromSupabase(key) {
   } catch(e) { return null; }
 }
 
+async function preloadLiturgyRange(startKey, endKey) {
+  try {
+    const { data, error } = await supa.from('liturgical_readings').select('*').gte('date', startKey).lte('date', endKey);
+    if (error || !data) return;
+    data.forEach(row => {
+      if (MISSALE_CACHE[row.date]) return;
+      let fullText = '';
+      if (row.epistle_text) {
+        fullText += `<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">${row.epistle_header || 'Épître'}</h3><p>${row.epistle_text.replace(/\n/g,'</p><p>')}</p>`;
+      }
+      if (row.gospel_text) {
+        fullText += `<h3 style="font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 10px;">${row.gospel_header || 'Évangile'}</h3><p>${row.gospel_text.replace(/\n/g,'</p><p>')}</p>`;
+      }
+      if (!fullText) return;
+      const ref = [row.epistle_header, row.gospel_header].filter(Boolean).join(' · ');
+      MISSALE_CACHE[row.date] = {
+        feast: row.feast || '',
+        ref,
+        epitre: row.epistle_header || '',
+        text: fullText,
+        homelie: ''
+      };
+    });
+  } catch(e) { console.error('preloadLiturgyRange error:', e); }
+}
+
 async function fetchLiturgy(key) {
   if (MISSALE_CACHE[key]) return MISSALE_CACHE[key];
   // Fête depuis la table statique
@@ -2025,12 +2051,15 @@ function rosState(key){const ds=G.days[key]||{};const c=ds.rosaryCount||0;return
 function dotClass(s){if(s===true||s==='done')return ' done';if(s==='prog')return ' prog';return '';}
 
 /* ── FEED ── */
-function buildFeed(){
+async function buildFeed(){
   const feed=document.getElementById('feed');feed.innerHTML='';
   const isAdminFeed = G.profile.role === 'admin';
   const forwardDays = isAdminFeed ? 90 : 7; // admin : accès étendu aux jours à venir (relecture/préparation)
   const d0=new Date(today);d0.setDate(d0.getDate()-EDIT_WINDOW_DAYS);
-  for(let i=0;i<EDIT_WINDOW_DAYS+forwardDays;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
+  const totalDays = EDIT_WINDOW_DAYS+forwardDays;
+  const dEnd=new Date(d0); dEnd.setDate(d0.getDate()+totalDays-1);
+  await preloadLiturgyRange(dk(d0), dk(dEnd)); // une seule requête pour toute la période au lieu d'une par jour
+  for(let i=0;i<totalDays;i++){const d=new Date(d0);d.setDate(d0.getDate()+i);feed.appendChild(buildCard(d));}
   document.getElementById('hdr-date').textContent=DAYS[today.getDay()]+' '+today.getDate()+' '+MONTHS_LONG[today.getMonth()];
   setTimeout(()=>{const el=document.getElementById('card-'+dk(today));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
@@ -2042,9 +2071,18 @@ function buildCard(d){
   // Fête : cache Missale Meum en priorité, sinon FEASTS local, sinon charge en async
   let feast = (MISSALE_CACHE[key]?.feast) || FEASTS[fkey] || '';
   if (!feast) {
-    // Pas encore chargé — on lance le fetch et on re-render quand c'est prêt
+    // Pas encore chargé (cas rare : hors de la période pré-chargée) — mise à jour ciblée de cette carte
+    // uniquement, sans reconstruire tout le fil (évite l'effet cascade).
     fetchLiturgy(key).then(r => {
-      if (r.feast) renderFeed();
+      if (r && r.feast) {
+        const card = document.getElementById('card-'+key);
+        if (card) {
+          const feastEl = card.querySelector('.dfeast');
+          if (feastEl) feastEl.textContent = r.feast;
+          const prevEl = card.querySelector('.day-preview');
+          if (prevEl) prevEl.textContent = r.ref+' — '+r.epitre;
+        }
+      }
     }).catch(()=>{});
     feast = ''; // chargement en cours
   }
