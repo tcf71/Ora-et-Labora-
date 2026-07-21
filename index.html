@@ -846,7 +846,7 @@ if ('serviceWorker' in navigator) {
       <input class="groupe-code-input" id="input-group-nom" style="font-size:16px;letter-spacing:0;text-align:left;padding:12px 14px;text-transform:none;" placeholder="Famille Martin…"></div>
       <button class="cta-btn" style="margin-top:4px;" onclick="createGroup()">Créer le groupe →</button>
     </div>
-    <button class="groupe-action-btn secondary" style="width:100%;margin-bottom:14px;" onclick="showCreateGroup()">+ Créer un groupe</button>
+    <button class="groupe-action-btn secondary" id="btn-toggle-create-group" style="width:100%;margin-bottom:14px;" onclick="showCreateGroup()">+ Créer un groupe</button>
 
     <!-- Explication -->
     <div style="background:rgba(255,252,247,0.9);border:1px solid rgba(255,200,150,0.4);border-radius:20px;padding:18px;box-shadow:0 4px 14px rgba(220,120,60,0.08);">
@@ -1763,7 +1763,10 @@ function genGroupCode(){
 }
 function showCreateGroup(){
   const f=document.getElementById('groupe-create-form');
-  f.style.display = f.style.display==='block' ? 'none' : 'block';
+  const btn=document.getElementById('btn-toggle-create-group');
+  const willOpen = f.style.display !== 'block';
+  f.style.display = willOpen ? 'block' : 'none';
+  if(btn) btn.textContent = willOpen ? 'Annuler' : '+ Créer un groupe';
 }
 async function createGroup(){
   const nomInput=document.getElementById('input-group-nom');
