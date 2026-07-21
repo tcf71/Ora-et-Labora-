@@ -1808,10 +1808,18 @@ async function loadGroupData(){
       .select('user_id, profiles(id,prenom,nom,spirit_avg)')
       .eq('group_id', row.group_id)
       .eq('status','accepted');
+    const {data:pendingRows} = await supa.from('group_members')
+      .select('user_id, invited_email, profiles(prenom,nom)')
+      .eq('group_id', row.group_id)
+      .eq('status','pending');
     groups.push({
       id: row.group_id,
       nom: row.groups?.nom||'',
-      members: (members||[]).map(m=>m.profiles).filter(Boolean)
+      members: (members||[]).map(m=>m.profiles).filter(Boolean),
+      pending: (pendingRows||[]).map(p=>({
+        email: p.invited_email||'',
+        nom: [p.profiles?.prenom,p.profiles?.nom].filter(Boolean).join(' ')
+      }))
     });
   }
   return {invites, groups, myId:user.id};
@@ -1851,13 +1859,24 @@ async function renderGroupe(){
           <div class="membre-score">${avg}<div class="membre-score-pts">pts moy.</div></div>
         </div>`;
       }).join('');
+      const pendingHtml = (g.pending&&g.pending.length) ? `
+        <div style="margin-top:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">En attente de réponse</div>
+          ${g.pending.map(p=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,200,150,0.3);font-size:13px;">
+              <span style="color:var(--text);">${p.nom||p.email}${p.nom&&p.email?' <span style=\'color:var(--muted);\'>('+p.email+')</span>':''}</span>
+              <span style="color:var(--warm-yellow);font-weight:700;">En attente</span>
+            </div>`).join('')}
+        </div>` : '';
       return `<div class="groupe-join-card" style="margin-bottom:14px;">
         <h3>${g.nom}</h3>
         <div class="membres-grid">${membersHtml}</div>
-        <div style="margin-top:6px;">
+        ${pendingHtml}
+        <div style="margin-top:12px;">
           <input class="groupe-code-input" id="invite-email-${g.id}" placeholder="email@exemple.com" style="font-size:14px;letter-spacing:0;text-align:left;padding:10px 12px;text-transform:none;">
           <button class="cta-btn" style="margin-top:8px;" onclick="inviteFamilyMember('${g.id}')">Inviter par email →</button>
         </div>
+        <button class="cta-btn outline" style="margin-top:10px;width:100%;" onclick="leaveGroup('${g.id}')">Quitter ce groupe</button>
       </div>`;
     }).join('');
   }
@@ -1898,6 +1917,14 @@ async function declineInvite(groupId){
   showToast('Invitation refusée');
   await renderGroupe();
   checkPendingInvites();
+}
+async function leaveGroup(groupId){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  const {error} = await supa.from('group_members').delete().eq('group_id',groupId).eq('user_id',user.id);
+  if(error){ showToast('Erreur : '+error.message); return; }
+  showToast('Vous avez quitté le groupe');
+  await renderGroupe();
 }
 async function checkPendingInvites(){
   try{
