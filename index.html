@@ -1839,6 +1839,10 @@ async function loadGroupData(){
   return {invites, groups, myId:user.id};
 }
 async function renderGroupe(){
+  const listWrapEl=document.getElementById('groupe-list-wrap');
+  if(listWrapEl && !listWrapEl.innerHTML.trim()){
+    listWrapEl.innerHTML='<div style="font-size:13px;color:var(--muted);text-align:center;padding:14px 0;">Chargement…</div>';
+  }
   const {invites, groups, myId} = await loadGroupData();
 
   const invitesWrap=document.getElementById('groupe-invites-wrap');
