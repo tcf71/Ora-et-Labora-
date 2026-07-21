@@ -1776,7 +1776,11 @@ async function createGroup(){
   if(!user) return;
   const code=genGroupCode();
   const {data:group, error} = await supa.from('groups').insert({nom, code, created_by:user.id}).select().single();
-  if(error){ showToast('Erreur : '+error.message); return; }
+  if(error){
+    if(error.code==='23505'){ showToast('Vous avez déjà un groupe avec ce nom'); }
+    else { showToast('Erreur : '+error.message); }
+    return;
+  }
   const {error:memErr} = await supa.from('group_members').insert({group_id:group.id, user_id:user.id, status:'accepted'});
   if(memErr){ showToast('Erreur : '+memErr.message); return; }
   nomInput.value='';
