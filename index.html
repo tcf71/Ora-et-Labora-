@@ -60,9 +60,10 @@ html,body{background:#ffffff;min-height:100vh;font-family:-apple-system,'Segoe U
 .hdr-right{display:flex;align-items:center;gap:7px;}
 .score-chip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);border:1px solid rgba(255,180,120,0.5);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:700;color:var(--accent);box-shadow:0 2px 8px rgba(255,140,80,0.12);}
 .score-chip .sc-label{font-size:11px;font-weight:400;color:var(--muted);}
-.icon-btn{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.7);border:1px solid rgba(255,180,120,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;font-size:15px;color:var(--accent);}
+.icon-btn{position:relative;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.7);border:1px solid rgba(255,180,120,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;font-size:15px;color:var(--accent);}
 .icon-btn:hover{border-color:var(--warm-orange);}
 .icon-btn.active-page{border-color:var(--done-border);background:var(--done-bg);color:var(--done-text);}
+.notif-dot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:#e0393e;border:1.5px solid #fff;}
 
 /* FEED */
 #feed{padding:14px 14px 0;display:flex;flex-direction:column;gap:12px;max-width:480px;margin:0 auto;}
@@ -824,172 +825,41 @@ if ('serviceWorker' in navigator) {
 <!-- PAGE GROUPE FAMILLE -->
 <div class="page" id="page-groupe">
 
-  <!-- État : pas encore dans un groupe -->
-  <div id="groupe-no-group">
-    <div class="groupe-hero">
-      <div style="font-size:42px;margin-bottom:8px;">🏠</div>
-      <div class="compte-name">Ma famille en prière</div>
-      <div class="compte-title">Priez ensemble, progressez ensemble</div>
-    </div>
-    <div class="groupe-body">
-      <div class="groupe-actions">
-        <button class="groupe-action-btn primary" onclick="showJoinGroup()">Rejoindre un groupe</button>
-        <button class="groupe-action-btn secondary" onclick="showCreateGroup()">Créer le mien</button>
-      </div>
-      <div class="groupe-join-card" id="groupe-join-form" style="display:none;">
-        <h3>Rejoindre un groupe</h3>
-        <input class="groupe-code-input" id="input-join-code" placeholder="MARIE7" maxlength="6">
-        <button class="cta-btn" style="margin-top:12px;" onclick="mockJoinGroup()">Rejoindre →</button>
-      </div>
-      <div class="groupe-join-card" id="groupe-create-form" style="display:none;">
-        <h3>Créer un groupe</h3>
-        <div style="font-size:14px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Un code unique sera généré — partagez-le à vos proches pour qu'ils vous rejoignent.</div>
-        <div style="margin-bottom:10px;"><div style="font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;">Nom du groupe</div>
-        <input class="groupe-code-input" style="font-size:16px;letter-spacing:0;text-align:left;padding:12px 14px;" placeholder="Famille Martin…"></div>
-        <button class="cta-btn" style="margin-top:4px;" onclick="mockCreateGroup()">Créer le groupe →</button>
-      </div>
-      <!-- Explication -->
-      <div style="background:rgba(255,252,247,0.9);border:1px solid rgba(255,200,150,0.4);border-radius:20px;padding:18px;box-shadow:0 4px 14px rgba(220,120,60,0.08);">
-        <div class="groupe-section-title" style="margin-bottom:10px;">Comment ça marche</div>
-        <div style="font-size:14px;color:var(--muted);line-height:1.8;">
-          <div style="margin-bottom:8px;">🏠 &nbsp;Créez un groupe et partagez le code à vos proches</div>
-          <div style="margin-bottom:8px;">📿 &nbsp;Chacun prie de son côté, à son rythme</div>
-          <div style="margin-bottom:8px;">👁 &nbsp;Vous voyez la progression de chacun en temps réel</div>
-          <div>🔒 &nbsp;Seuls les prénoms et les dots de progression sont visibles</div>
-        </div>
-      </div>
-    </div>
+  <div class="groupe-hero">
+    <div style="font-size:42px;margin-bottom:8px;">🏠</div>
+    <div class="compte-name">Ma famille en prière</div>
+    <div class="compte-title">Priez ensemble, progressez ensemble</div>
   </div>
+  <div class="groupe-body">
 
-  <!-- État : dans un groupe (données fictives) -->
-  <div id="groupe-has-group" style="display:none;">
-    <div class="groupe-hero">
-      <div class="compte-name">Famille Martin</div>
-      <div class="compte-title">Groupe de prière familial · 5 membres</div>
-      <div class="groupe-code-badge" onclick="copyGroupCode()" title="Copier le code">
-        <span class="groupe-code-label">Code :</span>
-        <span class="groupe-code">MARIE7</span>
-        <span style="font-size:11px;color:var(--muted);">📋</span>
+    <!-- Invitations en attente -->
+    <div id="groupe-invites-wrap"></div>
+
+    <!-- Groupes dont je fais déjà partie -->
+    <div id="groupe-list-wrap"></div>
+
+    <!-- Créer un groupe -->
+    <div class="groupe-join-card" id="groupe-create-form" style="display:none;">
+      <h3>Créer un groupe</h3>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Vous pourrez ensuite inviter vos proches par email — ils recevront une invitation à accepter ou refuser.</div>
+      <div style="margin-bottom:10px;"><div style="font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;">Nom du groupe</div>
+      <input class="groupe-code-input" id="input-group-nom" style="font-size:16px;letter-spacing:0;text-align:left;padding:12px 14px;text-transform:none;" placeholder="Famille Martin…"></div>
+      <button class="cta-btn" style="margin-top:4px;" onclick="createGroup()">Créer le groupe →</button>
+    </div>
+    <button class="groupe-action-btn secondary" style="width:100%;margin-bottom:14px;" onclick="showCreateGroup()">+ Créer un groupe</button>
+
+    <!-- Explication -->
+    <div style="background:rgba(255,252,247,0.9);border:1px solid rgba(255,200,150,0.4);border-radius:20px;padding:18px;box-shadow:0 4px 14px rgba(220,120,60,0.08);">
+      <div class="groupe-section-title" style="margin-bottom:10px;">Comment ça marche</div>
+      <div style="font-size:14px;color:var(--muted);line-height:1.8;">
+        <div style="margin-bottom:8px;">🏠 &nbsp;Créez un groupe et invitez vos proches par email</div>
+        <div style="margin-bottom:8px;">📩 &nbsp;Ils reçoivent une invitation à accepter ou refuser</div>
+        <div style="margin-bottom:8px;">📿 &nbsp;Chacun prie de son côté, à son rythme</div>
+        <div>🔒 &nbsp;Seule la moyenne de points de chacun est visible, rien d'autre</div>
       </div>
     </div>
-    <div class="groupe-body">
 
-      <!-- Compteur communautaire -->
-      <div class="groupe-compteur">
-        <div class="groupe-compteur-num">847</div>
-        <div class="groupe-compteur-txt">
-          <strong>fidèles ont prié aujourd'hui</strong>
-          dont 4 membres de votre groupe
-        </div>
-      </div>
-
-      <!-- Membres -->
-      <div class="groupe-section-title">Prières du jour</div>
-      <div class="membres-grid">
-
-        <!-- Membre 1 — tout fait -->
-        <div class="membre-card">
-          <div class="membre-avatar" style="background:linear-gradient(135deg,#ff8a6f,#ff6f59);">M</div>
-          <div class="membre-info">
-            <div class="membre-name">Marie</div>
-            <div class="membre-status">Journée complète 🌟</div>
-            <div class="membre-dots">
-              <div class="membre-dot done" title="Lectures"></div>
-              <div class="membre-dot done" title="Méditation"></div>
-              <div class="membre-dot done" title="Ave Maria"></div>
-              <div class="membre-dot done" title="Chapelet"></div>
-              <div class="membre-dot done" title="Rosaire"></div>
-              <div class="membre-dot done" title="Litanies"></div>
-            </div>
-          </div>
-          <div class="membre-score">248<div class="membre-score-pts">pts</div></div>
-        </div>
-
-        <!-- Membre 2 — en cours -->
-        <div class="membre-card">
-          <div class="membre-avatar" style="background:linear-gradient(135deg,#ffb088,#ff8a6f);">P</div>
-          <div class="membre-info">
-            <div class="membre-name">Pierre</div>
-            <div class="membre-status">En cours…</div>
-            <div class="membre-dots">
-              <div class="membre-dot done" title="Lectures"></div>
-              <div class="membre-dot done" title="Méditation"></div>
-              <div class="membre-dot prog" title="Ave Maria"></div>
-              <div class="membre-dot empty" title="Chapelet"></div>
-              <div class="membre-dot empty" title="Rosaire"></div>
-              <div class="membre-dot empty" title="Litanies"></div>
-            </div>
-          </div>
-          <div class="membre-score">112<div class="membre-score-pts">pts</div></div>
-        </div>
-
-        <!-- Membre 3 — début -->
-        <div class="membre-card">
-          <div class="membre-avatar" style="background:linear-gradient(135deg,#4cde9a,#2bba6e);">T</div>
-          <div class="membre-info">
-            <div class="membre-name">Thérèse</div>
-            <div class="membre-status">Vient de commencer</div>
-            <div class="membre-dots">
-              <div class="membre-dot done" title="Lectures"></div>
-              <div class="membre-dot empty" title="Méditation"></div>
-              <div class="membre-dot empty" title="Ave Maria"></div>
-              <div class="membre-dot empty" title="Chapelet"></div>
-              <div class="membre-dot empty" title="Rosaire"></div>
-              <div class="membre-dot empty" title="Litanies"></div>
-            </div>
-          </div>
-          <div class="membre-score">14<div class="membre-score-pts">pts</div></div>
-        </div>
-
-        <!-- Membre 4 — rien encore -->
-        <div class="membre-card" style="opacity:0.7;">
-          <div class="membre-avatar" style="background:linear-gradient(135deg,#d4a87a,#b8904a);">J</div>
-          <div class="membre-info">
-            <div class="membre-name">Jean</div>
-            <div class="membre-status" style="color:var(--red-border);">N'a pas encore prié</div>
-            <div class="membre-dots">
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-            </div>
-          </div>
-          <div class="membre-score" style="color:var(--muted);">0<div class="membre-score-pts">pts</div></div>
-        </div>
-
-        <!-- Moi -->
-        <div class="membre-card" style="border-color:rgba(43,186,110,0.4);background:rgba(240,255,248,0.9);">
-          <div class="membre-avatar" style="background:linear-gradient(135deg,#5b4fcf,#3b2fa0);">A</div>
-          <div class="membre-info">
-            <div class="membre-name">Antoine <span style="font-size:11px;color:var(--done-border);font-family:-apple-system,sans-serif;font-variant:normal;">(moi)</span></div>
-            <div class="membre-status">En cours…</div>
-            <div class="membre-dots">
-              <div class="membre-dot done"></div>
-              <div class="membre-dot done"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-              <div class="membre-dot empty"></div>
-            </div>
-          </div>
-          <div class="membre-score">35<div class="membre-score-pts">pts</div></div>
-        </div>
-
-      </div>
-
-      <!-- Inviter -->
-      <div style="background:rgba(255,252,247,0.9);border:1px dashed rgba(255,180,120,0.5);border-radius:20px;padding:16px;text-align:center;margin-bottom:14px;">
-        <div style="font-size:15px;font-weight:700;color:var(--muted);margin-bottom:6px;">Inviter un proche</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Partagez le code <strong style="color:var(--accent);letter-spacing:0.1em;">MARIE7</strong> ou envoyez un lien</div>
-        <button class="groupe-action-btn primary" style="border-radius:999px;padding:12px 24px;display:inline-block;width:auto;" onclick="showToast('Lien copié !')">Copier le lien d'invitation</button>
-      </div>
-
-      <div style="height:8px;"></div>
-    </div>
   </div>
-
 </div>
 
 <!-- PAGE SOUTENIR -->
@@ -1869,31 +1739,175 @@ function goPage(name){
   if(name==='compte')renderCompte();
   if(name==='contributeur')renderContributeur();
   if(name==='admin')renderAdmin();
+  if(name==='groupe')renderGroupe();
   window.scrollTo(0,0);
 }
 
-function showJoinGroup(){
-  document.getElementById('groupe-join-form').style.display='block';
-  document.getElementById('groupe-create-form').style.display='none';
+/* ── FAMILLE (groupes de prière) ── */
+const GROUP_AVATAR_COLORS=[
+  'linear-gradient(135deg,#ff8a6f,#ff6f59)',
+  'linear-gradient(135deg,#ffb088,#ff8a6f)',
+  'linear-gradient(135deg,#4cde9a,#2bba6e)',
+  'linear-gradient(135deg,#5b4fcf,#3b2fa0)',
+  'linear-gradient(135deg,#d4a87a,#b8904a)',
+  'linear-gradient(135deg,#4fa8d8,#2f7fb8)'
+];
+function avatarColor(seed){
+  let h=0; for(let i=0;i<seed.length;i++) h=(h*31+seed.charCodeAt(i))>>>0;
+  return GROUP_AVATAR_COLORS[h%GROUP_AVATAR_COLORS.length];
+}
+function genGroupCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
 }
 function showCreateGroup(){
-  document.getElementById('groupe-create-form').style.display='block';
-  document.getElementById('groupe-join-form').style.display='none';
+  const f=document.getElementById('groupe-create-form');
+  f.style.display = f.style.display==='block' ? 'none' : 'block';
 }
-function mockJoinGroup(){
-  const code=document.getElementById('input-join-code').value.toUpperCase().trim();
-  if(code.length<4){showToast('Code invalide');return;}
-  document.getElementById('groupe-no-group').style.display='none';
-  document.getElementById('groupe-has-group').style.display='block';
-  showToast('Groupe rejoint !');
+async function createGroup(){
+  const nomInput=document.getElementById('input-group-nom');
+  const nom=(nomInput.value||'').trim();
+  if(!nom){ showToast('Donnez un nom à votre groupe'); return; }
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  const code=genGroupCode();
+  const {data:group, error} = await supa.from('groups').insert({nom, code, created_by:user.id}).select().single();
+  if(error){ showToast('Erreur : '+error.message); return; }
+  const {error:memErr} = await supa.from('group_members').insert({group_id:group.id, user_id:user.id, status:'accepted'});
+  if(memErr){ showToast('Erreur : '+memErr.message); return; }
+  nomInput.value='';
+  document.getElementById('groupe-create-form').style.display='none';
+  showToast('✅ Groupe « '+nom+' » créé');
+  await renderGroupe();
 }
-function mockCreateGroup(){
-  document.getElementById('groupe-no-group').style.display='none';
-  document.getElementById('groupe-has-group').style.display='block';
-  showToast('Groupe créé — code : MARIE7');
+async function loadGroupData(){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return {invites:[], groups:[], myId:null};
+
+  const {data:inviteRows} = await supa.from('group_members')
+    .select('group_id, groups(nom)')
+    .eq('user_id', user.id)
+    .eq('status','pending');
+  const invites = (inviteRows||[]).map(r=>({groupId:r.group_id, groupNom:r.groups?.nom||'ce groupe'}));
+
+  const {data:memberRows} = await supa.from('group_members')
+    .select('group_id, groups(id,nom)')
+    .eq('user_id', user.id)
+    .eq('status','accepted');
+  const groups=[];
+  for(const row of (memberRows||[])){
+    const {data:members} = await supa.from('group_members')
+      .select('user_id, profiles(id,prenom,nom,spirit_avg)')
+      .eq('group_id', row.group_id)
+      .eq('status','accepted');
+    groups.push({
+      id: row.group_id,
+      nom: row.groups?.nom||'',
+      members: (members||[]).map(m=>m.profiles).filter(Boolean)
+    });
+  }
+  return {invites, groups, myId:user.id};
 }
-function copyGroupCode(){
-  showToast('Code MARIE7 copié !');
+async function renderGroupe(){
+  const {invites, groups, myId} = await loadGroupData();
+
+  const invitesWrap=document.getElementById('groupe-invites-wrap');
+  if(!invites.length){
+    invitesWrap.innerHTML='';
+  } else {
+    invitesWrap.innerHTML=invites.map(inv=>`
+      <div class="groupe-join-card" style="border-color:rgba(255,140,60,0.6);">
+        <h3>📩 Invitation</h3>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:14px;">Vous avez été invité(e) à rejoindre <strong style="color:var(--accent);">${inv.groupNom}</strong>.</div>
+        <div style="display:flex;gap:10px;">
+          <button class="cta-btn" style="flex:1;" onclick="acceptInvite('${inv.groupId}')">Accepter</button>
+          <button class="cta-btn outline" style="flex:1;" onclick="declineInvite('${inv.groupId}')">Refuser</button>
+        </div>
+      </div>`).join('');
+  }
+
+  const listWrap=document.getElementById('groupe-list-wrap');
+  if(!groups.length){
+    listWrap.innerHTML='';
+  } else {
+    listWrap.innerHTML=groups.map(g=>{
+      const membersHtml=g.members.map(m=>{
+        const isMe=m.id===myId;
+        const initial=(m.prenom||'?').charAt(0).toUpperCase();
+        const avg=Math.round(m.spirit_avg||0);
+        return `<div class="membre-card">
+          <div class="membre-avatar" style="background:${avatarColor(m.id)};">${initial}</div>
+          <div class="membre-info">
+            <div class="membre-name">${(m.prenom||'')+' '+(m.nom||'')}${isMe?' <span style="font-size:11px;color:var(--done-border);">(moi)</span>':''}</div>
+          </div>
+          <div class="membre-score">${avg}<div class="membre-score-pts">pts moy.</div></div>
+        </div>`;
+      }).join('');
+      return `<div class="groupe-join-card" style="margin-bottom:14px;">
+        <h3>${g.nom}</h3>
+        <div class="membres-grid">${membersHtml}</div>
+        <div style="margin-top:6px;">
+          <input class="groupe-code-input" id="invite-email-${g.id}" placeholder="email@exemple.com" style="font-size:14px;letter-spacing:0;text-align:left;padding:10px 12px;text-transform:none;">
+          <button class="cta-btn" style="margin-top:8px;" onclick="inviteFamilyMember('${g.id}')">Inviter par email →</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+async function inviteFamilyMember(groupId){
+  const input=document.getElementById('invite-email-'+groupId);
+  const email=(input.value||'').trim();
+  if(!email || !email.includes('@')){ showToast('Email invalide'); return; }
+  try{
+    const {data:{session}} = await supa.auth.getSession();
+    const res = await fetch(`${SUPA_URL}/functions/v1/invite-family-member`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body: JSON.stringify({groupId, email})
+    });
+    const resJson = await res.json();
+    if(!res.ok || resJson.error){ showToast('Erreur : '+(resJson.error||'inconnue')); return; }
+    input.value='';
+    showToast('✅ Invitation envoyée à '+email);
+  }catch(e){
+    showToast('Erreur réseau : '+e.message);
+  }
+}
+async function acceptInvite(groupId){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  const {error} = await supa.from('group_members').update({status:'accepted'}).eq('group_id',groupId).eq('user_id',user.id);
+  if(error){ showToast('Erreur : '+error.message); return; }
+  showToast('Bienvenue dans le groupe !');
+  await renderGroupe();
+  checkPendingInvites();
+}
+async function declineInvite(groupId){
+  const {data:{user}} = await supa.auth.getUser();
+  if(!user) return;
+  const {error} = await supa.from('group_members').update({status:'declined'}).eq('group_id',groupId).eq('user_id',user.id);
+  if(error){ showToast('Erreur : '+error.message); return; }
+  showToast('Invitation refusée');
+  await renderGroupe();
+  checkPendingInvites();
+}
+async function checkPendingInvites(){
+  try{
+    const {data:{user}} = await supa.auth.getUser();
+    if(!user) return;
+    const {data} = await supa.from('group_members').select('group_id').eq('user_id',user.id).eq('status','pending');
+    const hasPending = (data||[]).length>0;
+    const icon = document.getElementById('icon-groupe');
+    if(icon){
+      let dot = icon.querySelector('.notif-dot');
+      if(hasPending && !dot){
+        dot = document.createElement('span'); dot.className='notif-dot'; icon.appendChild(dot);
+      } else if(!hasPending && dot){
+        dot.remove();
+      }
+    }
+  }catch(e){ console.error('checkPendingInvites error:', e); }
 }
 
 
@@ -1968,6 +1982,9 @@ async function computeSpiritAverage(userId, createdAt){
     G.spiritAvg=G.spiritAvg||0;
   }
   G.spiritHistory=history;
+  // Persisté pour que les membres du groupe familial puissent voir la moyenne
+  // (jamais les données brutes) sans toucher aux règles de sécurité de daily_activity.
+  supa.from('profiles').upsert({id:userId, spirit_avg:G.spiritAvg}, {onConflict:'id'}).then(()=>{}).catch(()=>{});
   return G.spiritAvg;
 }
 function renderSpiritFrise(days=30){
@@ -2635,6 +2652,8 @@ async function loadUserData(user){
     renderFeed();
     // Fetch community counter (non-blocking)
     fetchDailyCounter().catch(()=>{});
+    // Invitations famille en attente -> badge sur l'icône (non-bloquant)
+    checkPendingInvites().catch(()=>{});
     // Subscribe to realtime counter updates
     subscribeToCounter();
     // Moyenne 6 mois → niveau de l'échelle sainte (non-bloquant)
