@@ -774,6 +774,14 @@ if ('serviceWorker' in navigator) {
       <button class="cta-btn outline" style="margin-top:8px;" onclick="saveProfileInfo()">Enregistrer mes informations</button>
       <button class="cta-btn outline" style="margin-top:8px;" onclick="openPwdModal()">Changer mon mot de passe</button>
     </div>
+    <div class="compte-section">
+      <div class="compte-section-title">📤 Partager l'app avec un proche</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Invitez un proche à prier chaque jour avec vous — il recevra un email de votre part pour l'inviter à découvrir l'app.</p>
+      <div class="field-row"><div class="field-label">Prénom</div><input class="field-input" id="invite-friend-prenom" type="text" placeholder="Prénom"></div>
+      <div class="field-row"><div class="field-label">Nom</div><input class="field-input" id="invite-friend-nom" type="text" placeholder="Nom"></div>
+      <div class="field-row"><div class="field-label">Adresse e-mail</div><input class="field-input" id="invite-friend-email" type="email" placeholder="email@exemple.com"></div>
+      <button class="cta-btn outline" style="margin-top:8px;" onclick="inviteFriend()">Envoyer l'invitation →</button>
+    </div>
     <div class="compte-section" id="pwd-modal-section" style="display:none;">
       <div class="compte-section-title">Nouveau mot de passe</div>
       <div class="field-row"><div class="field-label">Mot de passe actuel</div><input class="field-input" id="pwd-current" type="password" placeholder="••••••••"></div>
@@ -2733,6 +2741,30 @@ async function saveProfileInfo(){
   G.profile.prenom=prenom; G.profile.nom=nom;
   document.getElementById('c-name').textContent=(prenom||nom)?(prenom+' '+nom).trim():'—';
   showToast('✅ Informations enregistrées');
+}
+async function inviteFriend(){
+  const prenom=document.getElementById('invite-friend-prenom').value.trim();
+  const nom=document.getElementById('invite-friend-nom').value.trim();
+  const email=document.getElementById('invite-friend-email').value.trim();
+  if(!prenom || !email || !email.includes('@')){ showToast('Prénom et email valide requis'); return; }
+  showToast('Envoi de l\'invitation…');
+  try{
+    const {data:{session}} = await supa.auth.getSession();
+    if(!session){ showToast('Session expirée, reconnectez-vous'); return; }
+    const res = await fetch(`${SUPA_URL}/functions/v1/invite-friend`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body: JSON.stringify({prenom, nom, email})
+    });
+    const result = await res.json();
+    if(!res.ok || result.error){ showToast('Erreur : '+(result.error||'inconnue')); return; }
+    document.getElementById('invite-friend-prenom').value='';
+    document.getElementById('invite-friend-nom').value='';
+    document.getElementById('invite-friend-email').value='';
+    showToast('✅ Invitation envoyée à '+email);
+  }catch(e){
+    showToast('Erreur réseau : '+e.message);
+  }
 }
 async function saveProfile(userId){
   await supa.from('profiles').upsert({
