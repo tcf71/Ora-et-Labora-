@@ -2092,6 +2092,9 @@ async function saveActivityForDay(key){
       updated_at:     new Date().toISOString()
     },{onConflict:'user_id,date'});
     await saveScore();
+    // Retour immédiat sur le compteur communautaire si c'est l'activité du jour même
+    // (sans attendre le round-trip du temps réel).
+    if(key===dk(today)) fetchDailyCounter().catch(()=>{});
   } catch(e) {
     console.error('saveActivityForDay error:', e);
     showToast('⚠️ Erreur sauvegarde: '+e.message);
@@ -2709,8 +2712,10 @@ async function loadUserData(user){
     await loadRecentActivity(user.id);
     // Load published homélies
     await loadHomelies();
-    // Re-render feed with loaded data
-    renderFeed();
+    // Re-render feed with loaded data — on attend la fin du rebuild avant de
+    // toucher au compteur communautaire, sinon buildFeed() écrase le chiffre
+    // qu'on vient d'y mettre en reconstruisant la carte du jour par-dessus.
+    await renderFeed();
     // Fetch community counter (non-blocking)
     fetchDailyCounter().catch(()=>{});
     // Invitations famille en attente -> badge sur l'icône (non-bloquant)
@@ -2853,9 +2858,13 @@ async function saveHomelieToSupabase(key, content, published){
 
 async function fetchDailyCounter(){
   const today = dk(new Date());
-  const {data, error} = await supa.from('daily_counter').select('count').eq('date',today).maybeSingle();
+  // Compte en direct les personnes ayant fait au moins une action de prière
+  // aujourd'hui (via la fonction RPC count_today_pray, qui contourne la RLS
+  // de daily_activity — chaque utilisateur ne pouvant lire que ses propres
+  // lignes — pour ne renvoyer qu'un total agrégé, jamais les données brutes).
+  const {data, error} = await supa.rpc('count_today_pray', {target_date: today});
   if(error) console.error('fetchDailyCounter error:', error.message);
-  const count = data?.count || 0;
+  const count = data || 0;
   const el = document.getElementById('community-count');
   if(el) el.textContent = count.toLocaleString('fr-FR') + ' fidèles prient aujourd\'hui';
 }
@@ -2863,12 +2872,9 @@ async function fetchDailyCounter(){
 let _dailyCounterChannel = null;
 function subscribeToCounter(){
   if(_dailyCounterChannel) return; // déjà abonné dans cette session, on ne recrée pas le canal
-  _dailyCounterChannel = supa.channel('daily_counter')
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'daily_counter'},
-      payload => {
-        const el = document.getElementById('community-count');
-        if(el) el.textContent = payload.new.count.toLocaleString('fr-FR') + ' fidèles prient aujourd\'hui';
-      })
+  _dailyCounterChannel = supa.channel('daily_activity_counter')
+    .on('postgres_changes',{event:'*',schema:'public',table:'daily_activity'},
+      () => { fetchDailyCounter().catch(()=>{}); })
     .subscribe();
 }
 let _groupMembersChannel = null;
