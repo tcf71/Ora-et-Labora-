@@ -24,7 +24,9 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 <script>
 const SUPA_URL = 'https://crvxtkahztviwxvlngmv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNydnh0a2FoenR2aXd4dmxuZ212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMjY0MjgsImV4cCI6MjA5ODYwMjQyOH0.h84oqW176Ly-lI8zHYZteKYbfRkhUeSSOecTgAjkLuY';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage }
+});
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1976,17 +1978,23 @@ async function checkPendingInvites(){
 function addScore(pts,msg){
   G.score=Math.max(0,G.score+pts);
   updateLevel();
-  document.getElementById('hdr-score').textContent=G.score;
+  updateHdrScore();
   if(msg)showToast(msg);
   saveTodayActivity();
 }
 function updateLevel(){
   // Le niveau (Novice → Saint des temps) reflète la MOYENNE quotidienne sur 6 mois,
-  // pas le score cumulé (qui reste affiché tel quel en haut de l'écran).
+  // qui est aussi ce qu'on affiche désormais en haut de l'écran (voir updateHdrScore).
   let lvl=0;
   const avg=G.spiritAvg||0;
   for(let i=0;i<LEVELS.length;i++){if(avg>=LEVELS[i].threshold)lvl=i;}
   G.level=lvl;
+}
+function updateHdrScore(){
+  // Le chip en haut à droite affiche la moyenne 6 mois (la même que sur l'échelle
+  // sainte), pas le score cumulé brut — plus parlant à l'usage quotidien.
+  const el=document.getElementById('hdr-score');
+  if(el) el.textContent=Math.round(G.spiritAvg||0);
 }
 function computeDayScore({lectures,homelie,aveCount,chapeletCount,rosaireCount,litanies}){
   // Formule partagée : c'est EXACTEMENT le même calcul que le score du jour affiché
@@ -2030,6 +2038,7 @@ async function computeSpiritAverage(userId, createdAt){
     const daysSince=Math.floor((end-new Date(createdAt))/86400000)+1;
     denom=Math.min(SPIRIT_WINDOW_DAYS, Math.max(1,daysSince));
   }
+  G.spiritDenom=denom; // réutilisé pour les mises à jour incrémentales (voir recalcScoreForDay)
   try{
     const {data}=await supa.from('daily_activity')
       .select('date,lectures,homelie,ave_count,chapelet_count,rosaire_count,litanies')
@@ -2043,6 +2052,7 @@ async function computeSpiritAverage(userId, createdAt){
     G.spiritAvg=G.spiritAvg||0;
   }
   G.spiritHistory=history;
+  updateHdrScore();
   // Persisté pour que les membres du groupe familial puissent voir la moyenne
   // (jamais les données brutes) sans toucher aux règles de sécurité de daily_activity.
   supa.from('profiles').upsert({id:userId, spirit_avg:G.spiritAvg}, {onConflict:'id'}).then(()=>{}).catch(()=>{});
@@ -2122,7 +2132,15 @@ async function recalcScoreForDay(key){
     G.score = Math.max(0, G.baseScore+todayScore);
   }
   ds._lastScore = newScore;
-  document.getElementById('hdr-score').textContent = G.score;
+  // Moyenne 6 mois mise à jour en direct (même logique que computeSpiritAverage,
+  // mais incrémentale pour ne pas refaire une requête complète à chaque coche) —
+  // c'est cette moyenne, pas le score cumulé brut, qui s'affiche en haut à droite.
+  G.spiritHistory = G.spiritHistory || {};
+  const oldHistScore = G.spiritHistory[key] || 0;
+  G.spiritHistory[key] = newScore;
+  const denom = G.spiritDenom || SPIRIT_WINDOW_DAYS;
+  G.spiritAvg = Math.max(0, (G.spiritAvg||0) + (newScore-oldHistScore)/denom);
+  updateHdrScore();
   updateLevel();
   await saveActivityForDay(key);
 }
@@ -2303,6 +2321,9 @@ async function openReader(key,type){
   document.getElementById('reader-text').innerHTML='<p style="color:var(--muted);text-align:center;padding:20px;">🕯️</p>';
   document.getElementById('reader').classList.add('open');
   document.body.style.overflow='hidden';
+  // #reader est un même nœud DOM réutilisé à chaque ouverture : sans ce reset,
+  // il garde le scroll de la dernière lecture (souvent en bas de page).
+  document.getElementById('reader').scrollTop = 0;
   const ds=G.days[key]||{};
   const isDone=isLecture?ds.lectures:ds.homelie;
   updateReaderButtons(isDone);
@@ -2594,7 +2615,7 @@ function showAvatarPhoto(dataUrl){
 
 // Init — le buildFeed sera appelé après le chargement des fêtes liturgiques
 const todayKey=dk(today);
-document.getElementById('hdr-score').textContent=G.score;
+updateHdrScore();
 
 /* ── ONBOARDING LOGIC ── */
 if(G.profile.onboarded){
@@ -2612,7 +2633,7 @@ function goAuthScreen(screen){
 
 async function doLogout(){
   await supa.auth.signOut();
-  G.score=0; G.level=0; G.streak=0;
+  G.score=0; G.level=0; G.streak=0; G.spiritAvg=0; G.spiritHistory={};
   G.profile={prenom:'',nom:'',email:'',role:'',onboarded:false};
   G.days={}; G.homelies={};
   document.getElementById('hdr-score').textContent='0';
@@ -2706,7 +2727,10 @@ async function loadUserData(user){
       G.score = profile.score || 0;
       G.baseScore = profile.score || 0;
       G.level = profile.level ?? 0;
-      document.getElementById('hdr-score').textContent = G.score;
+      // Valeur persistée en attendant le recalcul exact via computeSpiritAverage
+      // (évite un flash à 0 pendant le round-trip réseau).
+      G.spiritAvg = profile.spirit_avg || 0;
+      updateHdrScore();
     }
     // Load today's activity
     await loadRecentActivity(user.id);
@@ -2915,8 +2939,34 @@ if(window.location.hash.includes('access_token') && (window.location.hash.includ
   } catch(e) {}
 })();
 
-// Check session on load — recharge l'état à chaque ouverture
-supa.auth.getSession().then(({data:{session}})=>{
+// Check session on load — recharge l'état à chaque ouverture.
+// Sur mobile, au réveil du téléphone après une longue mise en veille, le
+// réseau n'est parfois pas encore rétabli au moment exact de cet appel :
+// sans ce mécanisme de nouvelle tentative, un simple aléa réseau pouvait
+// être confondu avec une vraie déconnexion et forcer une reconnexion
+// manuelle chaque jour, alors que la session (le jeton de rafraîchissement)
+// était toujours valide en réalité.
+function hasStoredSupabaseToken(){
+  try{
+    return Object.keys(window.localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+  }catch(e){ return false; }
+}
+async function initSessionWithRetry(retries=3, delayMs=1500){
+  for(let attempt=0; attempt<=retries; attempt++){
+    let session=null, err=null;
+    try{
+      const res = await supa.auth.getSession();
+      session = res?.data?.session || null;
+      err = res?.error || null;
+    }catch(e){ err=e; }
+    if(session) return session;
+    if(!hasStoredSupabaseToken()) return null; // jamais connecté sur cet appareil : pas la peine d'attendre
+    if(attempt===retries){ console.error('Session introuvable après plusieurs tentatives :', err?.message); return null; }
+    await new Promise(r=>setTimeout(r, delayMs));
+  }
+  return null;
+}
+initSessionWithRetry().then(session=>{
   if(session){
     loadUserData(session.user).then(()=>{
       document.getElementById('auth-choice').classList.remove('open');
@@ -2934,7 +2984,7 @@ supa.auth.getSession().then(({data:{session}})=>{
 // Écoute uniquement la déconnexion
 supa.auth.onAuthStateChange((event, session) => {
   if(event === 'SIGNED_OUT') {
-    G.days = {}; G.score = 0;
+    G.days = {}; G.score = 0; G.spiritAvg = 0; G.spiritHistory = {};
     G.profile = {prenom:'',nom:'',email:'',role:'',onboarded:false};
     document.getElementById('hdr-score').textContent = '0';
     renderFeed();
@@ -3224,6 +3274,7 @@ function openLitanie(key, litId) {
   if(!ds.litanies) ds.litanies={};
   updateReaderButtons(!!ds.litanies[litId]);
   document.getElementById('reader').classList.add('open');
+  document.getElementById('reader').scrollTop = 0;
   document.body.style.overflow='hidden';
 }
 
