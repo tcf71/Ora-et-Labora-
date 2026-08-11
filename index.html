@@ -495,18 +495,25 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
-// Après une vraie absence (app en arrière-plan un moment), on recharge proprement
-// pour retomber sur Prières + la date du jour, plutôt que de rester figé sur
-// l'état (page, date) tel qu'il était avant la mise en arrière-plan.
+// Après une vraie absence (app en arrière-plan un moment), on retombe sur
+// Prières + la date du jour SANS recharger la page : un rechargement complet
+// relance tout le cycle d'authentification et peut, s'il tombe au mauvais
+// moment, interrompre le rafraîchissement automatique du jeton de session en
+// cours — ce qui provoquait une déconnexion superflue, obligeant à se
+// reconnecter chaque matin même si la session était en réalité toujours
+// valide. On se contente donc de vérifier si le calendrier a changé, et si
+// oui, de remettre l'app à jour "en douceur".
 (function(){
-  let hiddenSince = null;
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      hiddenSince = Date.now();
-    } else if (document.visibilityState === 'visible' && hiddenSince) {
-      if (Date.now() - hiddenSince > 15*60*1000) { location.reload(); }
-      hiddenSince = null;
-    }
+    try {
+      if (document.visibilityState !== 'visible') return;
+      const now = new Date();
+      if (dk(now) !== dk(today)) {
+        today = now;
+        goPage('prieres');
+        renderFeed();
+      }
+    } catch(e) { /* today/dk/goPage/renderFeed pas encore chargés — rien à faire */ }
   });
 })();
 </script>
@@ -1740,7 +1747,7 @@ let G={
   homelies:{}
 };
 
-const today=new Date();
+let today=new Date();
 function dk(d){
   const m=String(d.getMonth()+1).padStart(2,'0');
   const day=String(d.getDate()).padStart(2,'0');
