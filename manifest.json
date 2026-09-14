@@ -1,8 +1,10 @@
 {
+  "id": "/",
   "name": "Ora et Labora",
   "short_name": "Ora et Labora",
   "description": "Prière catholique quotidienne — rite de Saint Pie V",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
