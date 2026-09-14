@@ -448,6 +448,19 @@ textarea.homelie-input:focus{border-color:var(--accent);}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card);border:1.5px solid var(--accent);color:var(--accent);font-size:12px;font-weight:600;padding:9px 18px;border-radius:999px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap;}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 
+/* ── BANNIÈRE INSTALLATION PWA ── */
+#install-banner{display:none;align-items:center;gap:10px;background:linear-gradient(135deg,var(--warm-orange),var(--warm-peach));color:#fff;padding:10px 14px;font-size:13px;line-height:1.35;position:relative;z-index:40;}
+#install-banner.show{display:flex;}
+#install-banner-text{flex:1;}
+#install-banner-text b{font-weight:700;}
+#install-banner-btn{flex-shrink:0;background:#fff;color:var(--warm-orange);border:none;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+#install-banner-close{flex-shrink:0;background:none;border:none;color:#fff;opacity:0.85;font-size:16px;line-height:1;cursor:pointer;padding:4px 2px;}
+#install-cta-box{border:1.5px dashed var(--warm-orange);border-radius:14px;padding:14px;margin-bottom:8px;}
+#install-cta-box.installed{border-style:solid;border-color:var(--done-border);background:var(--done-bg);}
+#install-cta-box .ic-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+#install-cta-box .ic-desc{font-size:13px;color:var(--muted);margin-bottom:10px;}
+#install-cta-box.installed .ic-desc{color:var(--done-text);}
+
 /* ── PAGE GROUPE FAMILLE ── */
 .groupe-hero{background:linear-gradient(160deg,#fff5e8,#ffe4cc);border-bottom:1px solid rgba(255,180,120,0.3);padding:22px 20px 18px;text-align:center;}
 .groupe-code-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,180,120,0.5);border-radius:999px;padding:7px 16px;margin-top:8px;cursor:pointer;}
@@ -784,6 +797,9 @@ if ('serviceWorker' in navigator) {
       <button class="cta-btn outline" style="margin-top:8px;" onclick="openPwdModal()">Changer mon mot de passe</button>
     </div>
     <div class="compte-section">
+      <div id="install-cta-box"></div>
+    </div>
+    <div class="compte-section">
       <div class="compte-section-title">📤 Partager l'app avec un proche</div>
       <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Invitez un proche à prier chaque jour avec vous — il recevra un email de votre part pour l'inviter à découvrir l'app.</p>
       <div class="field-row"><div class="field-label">Prénom</div><input class="field-input" id="invite-friend-prenom" type="text" placeholder="Prénom"></div>
@@ -980,6 +996,12 @@ if ('serviceWorker' in navigator) {
       <button class="reader-btn active-unread" id="reader-btn-unread" onclick="setReaderState(false)">Non lu</button>
     </div>
   </div>
+</div>
+
+<div id="install-banner">
+  <div id="install-banner-text"></div>
+  <button id="install-banner-btn" onclick="handleInstallClick()" style="display:none;">Installer</button>
+  <button id="install-banner-close" onclick="dismissInstallBanner()" aria-label="Fermer">✕</button>
 </div>
 
 <div id="toast"></div>
@@ -2023,7 +2045,8 @@ function computeDayScore({lectures,homelie,aveCount,chapeletCount,rosaireCount,l
   if(ros>=100) s+=PTS.rosPerChapelet;
   if(ros>=150) s+=PTS.rosPerChapelet;
   if(litanies){
-    Object.values(litanies).forEach(v=>{ if(v===true) s+=PTS.litSacreCoeur; });
+    const litPtsMap={'sacre-coeur':PTS.litSacreCoeur,'saints':PTS.litSaints,'vierge':PTS.litVierge,'joseph':PTS.litJoseph};
+    Object.keys(litanies).forEach(k=>{ if(litanies[k]===true) s+=(litPtsMap[k]!==undefined?litPtsMap[k]:15); });
   }
   return s;
 }
@@ -2601,6 +2624,80 @@ function updateDonRecap(){document.getElementById('don-recap').textContent=donRe
 /* ── TOAST ── */
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
+/* ── INSTALLATION PWA ── */
+const IS_STANDALONE = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let deferredInstallPrompt = null;
+const INSTALL_DISMISS_KEY = 'ora_install_banner_dismissed_at';
+const INSTALL_DISMISS_DAYS = 14;
+
+function installBannerWasDismissedRecently(){
+  try{
+    const ts = parseInt(localStorage.getItem(INSTALL_DISMISS_KEY) || '0', 10);
+    if(!ts) return false;
+    return (Date.now() - ts) < INSTALL_DISMISS_DAYS * 24 * 60 * 60 * 1000;
+  }catch(e){ return false; }
+}
+function dismissInstallBanner(){
+  document.getElementById('install-banner').classList.remove('show');
+  try{ localStorage.setItem(INSTALL_DISMISS_KEY, String(Date.now())); }catch(e){}
+}
+async function handleInstallClick(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  try{ await deferredInstallPrompt.userChoice; }catch(e){}
+  deferredInstallPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+  renderInstallCtaBox();
+}
+function showInstallBanner(){
+  if(IS_STANDALONE || installBannerWasDismissedRecently()) return;
+  const banner = document.getElementById('install-banner');
+  const text = document.getElementById('install-banner-text');
+  const btn = document.getElementById('install-banner-btn');
+  if(IS_IOS){
+    text.innerHTML = '<b>Installez Ora et Labora</b> : appuyez sur le bouton Partager puis « Sur l\'écran d\'accueil ».';
+    btn.style.display = 'none';
+  } else if(deferredInstallPrompt){
+    text.innerHTML = '<b>Installez Ora et Labora</b> pour un accès plus rapide, en plein écran.';
+    btn.style.display = 'inline-block';
+  } else {
+    return;
+  }
+  banner.classList.add('show');
+}
+function renderInstallCtaBox(){
+  const box = document.getElementById('install-cta-box');
+  if(!box) return;
+  if(IS_STANDALONE){
+    box.classList.add('installed');
+    box.innerHTML = '<div class="ic-title">✅ Application installée</div><div class="ic-desc">Ora et Labora est installée sur cet appareil.</div>';
+    return;
+  }
+  box.classList.remove('installed');
+  if(IS_IOS){
+    box.innerHTML = '<div class="ic-title">📲 Installer l\'app</div><div class="ic-desc">Appuyez sur le bouton Partager de Safari (le carré avec une flèche), puis choisissez « Sur l\'écran d\'accueil ». L\'app s\'ouvrira ensuite en plein écran, comme une vraie application.</div>';
+  } else if(deferredInstallPrompt){
+    box.innerHTML = '<div class="ic-title">📲 Installer l\'app</div><div class="ic-desc">Ajoutez Ora et Labora à votre écran d\'accueil pour un accès plus rapide.</div><button class="cta-btn outline" onclick="handleInstallClick()">Installer l\'app →</button>';
+  } else {
+    box.innerHTML = '<div class="ic-title">📲 Installer l\'app</div><div class="ic-desc">Depuis le menu de votre navigateur, choisissez « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».</div>';
+  }
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallBanner();
+  renderInstallCtaBox();
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+  renderInstallCtaBox();
+  showToast('✅ Application installée');
+});
+if(IS_IOS && !IS_STANDALONE) showInstallBanner();
+renderInstallCtaBox();
+
 /* ── AVATAR UPLOAD ── */
 function handleAvatarUpload(event){
   const file=event.target.files[0];
@@ -2834,13 +2931,16 @@ async function loadRecentActivity(userId){
   if(data) data.forEach(row=>{
     if(!G.days[row.date]) G.days[row.date]={};
     const ds = G.days[row.date];
-    ds.lectures        = row.lectures || false;
-    ds.homelie         = row.homelie  || false;
-    ds._aveSel         = row.ave_count || 0;
-    ds.ave             = row.ave_count > 0;
-    ds.chapeletCount   = row.chapelet_count || 0;
-    ds.rosaryCount     = row.rosaire_count  || 0;
-    ds.litanies        = row.litanies || {};
+    // Fusion non destructive : si une progression locale existe déjà pour ce jour
+    // (pas encore répercutée côté serveur au moment de ce chargement), on ne la fait
+    // jamais régresser — on garde toujours le maximum entre local et serveur.
+    ds.lectures        = !!(ds.lectures || row.lectures);
+    ds.homelie         = !!(ds.homelie  || row.homelie);
+    ds._aveSel         = Math.max(ds._aveSel || 0, row.ave_count || 0);
+    ds.ave             = ds._aveSel > 0;
+    ds.chapeletCount   = Math.max(ds.chapeletCount || 0, row.chapelet_count || 0);
+    ds.rosaryCount     = Math.max(ds.rosaryCount || 0, row.rosaire_count  || 0);
+    ds.litanies        = Object.assign({}, row.litanies || {}, ds.litanies || {});
     ds._lastScore      = computeDayScore({
       lectures: ds.lectures, homelie: ds.homelie, aveCount: ds._aveSel,
       chapeletCount: ds.chapeletCount, rosaireCount: ds.rosaryCount, litanies: ds.litanies
@@ -2968,7 +3068,19 @@ async function initSessionWithRetry(retries=3, delayMs=1500){
     }catch(e){ err=e; }
     if(session) return session;
     if(!hasStoredSupabaseToken()) return null; // jamais connecté sur cet appareil : pas la peine d'attendre
-    if(attempt===retries){ console.error('Session introuvable après plusieurs tentatives :', err?.message); return null; }
+    if(attempt===retries){
+      // Dernier recours avant d'abandonner : forcer un rafraîchissement explicite du token.
+      // Après une longue mise en veille (nuit entière, iPhone verrouillé), le rafraîchissement
+      // automatique en arrière-plan n'a pas pu tourner ; on le déclenche donc nous-mêmes ici
+      // plutôt que de renvoyer l'utilisateur à l'écran de connexion sans avoir essayé.
+      try{
+        const {data:refreshed, error:refreshErr} = await supa.auth.refreshSession();
+        if(refreshed?.session) return refreshed.session;
+        if(refreshErr) console.error('refreshSession error:', refreshErr.message);
+      }catch(e){ console.error('refreshSession exception:', e.message); }
+      console.error('Session introuvable après plusieurs tentatives :', err?.message);
+      return null;
+    }
     await new Promise(r=>setTimeout(r, delayMs));
   }
   return null;
